@@ -16,7 +16,7 @@ DONT CHANGE ANY CODE UNDER THIS LINE - DONT CHANGE ANY CODE UNDER THIS LINE - DO
 
 
 // SCROLL REVEAL
-	window.sr = new scrollReveal();
+	window.sr = new scrollReveal({mobile: true});
 
 
 // PARALLAX IMAGES 
