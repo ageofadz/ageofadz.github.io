@@ -5,7 +5,7 @@ export default function robots() {
         userAgent: '*',
       },
     ],
-    sitemap: 'https://leerob.io/sitemap.xml',
-    host: 'https://leerob.io',
+    sitemap: 'https://samrobertson.dev/sitemap.xml',
+    host: 'https://samrobertson.dev',
   };
 }

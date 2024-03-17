@@ -1,23 +1,35 @@
 import './global.css';
 import type { Metadata } from 'next';
-import { GeistSans } from 'geist/font/sans';
-import { GeistMono } from 'geist/font/mono';
+import { Sono } from 'next/font/google'
+import { Roboto } from 'next/font/google'
+
 import { Navbar } from './components/nav';
-import { Analytics } from '@vercel/analytics/react';
 import { SandpackCSS } from './blog/[slug]/sandpack';
+import { Links } from './components/links';
+
+const sono = Sono({
+  subsets: ['latin', 'vietnamese'],
+  display: 'swap',
+  variable: '--font-mono',
+})
+const roboto = Roboto({
+  subsets: ['latin', 'vietnamese'],
+  weight: '300',
+  variable: '--font-sans',
+})
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://leerob.io'),
+  metadataBase: new URL('https://samrobertson.dev'),
   title: {
-    default: 'Lee Robinson',
-    template: '%s | Lee Robinson',
+    default: 'Sam Robertson',
+    template: '%s | Sam Robertson',
   },
-  description: 'Developer, writer, and creator.',
+  description: 'I love building stuff.',
   openGraph: {
-    title: 'Lee Robinson',
-    description: 'Developer, writer, and creator.',
-    url: 'https://leerob.io',
-    siteName: 'Lee Robinson',
+    title: 'Sam Robertson',
+    description: 'I love building stuff.',
+    url: 'https://samrobertson.dev',
+    siteName: 'Sam Robertson',
     locale: 'en_US',
     type: 'website',
   },
@@ -33,7 +45,7 @@ export const metadata: Metadata = {
     },
   },
   twitter: {
-    title: 'Lee Robinson',
+    title: 'Sam Robertson',
     card: 'summary_large_image',
   },
   verification: {
@@ -54,17 +66,20 @@ export default function RootLayout({
       lang="en"
       className={cx(
         'text-black bg-white dark:text-white dark:bg-[#111010]',
-        GeistSans.variable,
-        GeistMono.variable
+        roboto.variable,
+        sono.variable
       )}
     >
       <head>
         <SandpackCSS />
       </head>
-      <body className="antialiased max-w-2xl mb-40 flex flex-col md:flex-row mx-4 mt-8 lg:mx-auto">
-        <main className="flex-auto min-w-0 mt-6 flex flex-col px-2 md:px-0">
+      <body className="antialiased max-w-2xl mb-40 flex flex-row md:flex-row mx-4 mt-8 lg:mx-auto">
+        <main className="flex-auto min-w-0 mt-6 flex flex-row px-2 md:px-0">
           <Navbar />
+          <div className='w-11/12 mx-8'>
           {children}
+          </div>
+          <Links />
         </main>
       </body>
     </html>
