@@ -6,24 +6,22 @@ summary: "How grifgraf turns lat/lon coordinates into local AR coordinates"
 
 ## The problem
 
-The central technical requirement of grifgraf, which makes it unique from other AR-enabled apps, is that objects can be saved onto real-life locations and viewed later at that exact spot.
+One of the increasingly interesting use cases for AR is the ability to have persistent virtual content appearing in real-life locations, such as informational graphics outside of major landmarks, or directional content along a route. This
 
-In effect, this requires that we can convert local X, Y, Z, and rotation values to latitude, longitude, altitude, and absolute rotational data (we will call it LLAR from now on) of objects and back seamlessly.
+This use case is the core feature of grifgraf. Users on grifgraf post virtual graffiti onto real-life locations, which persist at those locations to be viewed by other users of the app.
 
-Here's how I tackled this with [grifgraf](https://grifgraf.app).
+I've found that therea are quite a few ways one could persist AR content at a real-life location, but I settled on one solution I will go talk about in this post. I may write future articles about the experiments I tried with other approaches.
 
-It also requires that we need to know the location and rotation of the
-user's phone. I've written in detail about [getting a precise user
-location]() for this purpose. This post is about what I did _once we have
-gotten a precise user location_.
+## Glossary
+
+- Local coordinates: This refers to the rotation, X, Y and Z coordinates ARKit uses to position virtual content in relation to your phone's camera.
+- Geo coordinates: This refers to the latitude, longitude, altitude, and rotation values of virtual content
 
 ## From lat/lon to local coordinates
 
-We're going to start ahead and move backwards with this implementation - the relatively simpler process is taking an existing graf, with its LLAR saved on the backend, and placing it into ARKits local coordinate space.
+There are really two technical challenges in this use case:
 
-At the point when the user's precise location is grabbed, we re-run the AR session, which sets the location of the phone as the world's origin point. This isn't necessary but it makes the math just a bit simpler.
-
-We use the
+- How do I save local coordinates
 
 ## From local to lat/lon coordinates
 
