@@ -1,0 +1,133 @@
+---
+title: "Using Haversine/Vincenty Formulae for Geopositioning in ARKit"
+publishedAt: "2024-03-12"
+summary: "How grifgraf turns lat/lon coordinates into local AR coordinates"
+---
+
+## The problem
+
+The central technical requirement of grifgraf, which makes it unique from other AR-enabled apps, is that objects can be saved onto real-life locations and viewed later at that exact spot.
+
+In effect, this requires that we can convert local X, Y, Z, and rotation values to latitude, longitude, altitude, and absolute rotational data (we will call it LLAR from now on) of objects and back seamlessly.
+
+Here's how I tackled this with [grifgraf](https://grifgraf.app).
+
+It also requires that we need to know the location and rotation of the
+user's phone. I've written in detail about [getting a precise user
+location]() for this purpose. This post is about what I did _once we have
+gotten a precise user location_.
+
+## From lat/lon to local coordinates
+
+We're going to start ahead and move backwards with this implementation - the relatively simpler process is taking an existing graf, with its LLAR saved on the backend, and placing it into ARKits local coordinate space.
+
+At the point when the user's precise location is grabbed, we re-run the AR session, which sets the location of the phone as the world's origin point. This isn't necessary but it makes the math just a bit simpler.
+
+We use the
+
+## From local to lat/lon coordinates
+
+## How do I test it?
+
+```
+    func testSameCoordinates() throws {
+        // Should return the same coordinates back and forth
+        let userCoords = CLLocationCoordinate2D(latitude: 41.87579360778173, longitude: -87.6189474796952)
+        let entCoords = buckingham
+
+        let pos = gem.haversineDistance(la1: entCoords.latitude, lo1: entCoords.longitude, la2: userCoords.latitude, lo2: userCoords.longitude)
+        XCTAssertEqual(pos, 0)
+        let inverse = gem.inverseHaversine(la: userCoords.latitude, lo: userCoords.longitude, distance: 0, direction: 0)
+        XCTAssertEqual(userCoords.latitude, inverse.latitude)
+        XCTAssertEqual(userCoords.longitude, inverse.longitude)
+    }
+```
+
+I tested this by going to a common area in my apartment building back in Chicago with my laptop, opening google maps, and using the "measure distance" tool to create reliable, easily calculted coordinate pairs.
+
+Also xcode tests, asserting the lat lons equal eachother.
+
+## Other attempts
+
+I like to talk about all the interesting hacks and workarounds I tried to make this work. Much effort went into experimenting to get this nice result you see above.
+
+My favorite has to be my attempt at using OpenStreetMap to create invisible surfaces in the AR world that map precisely onto real life walls.
+If this worked, it would have been really really cool because it meant that you could actually identify certain walls and the art on them.
+The downside would be that if you wanted to tag something that wasn't on OSM, like an electrical box or temporary structure of some kind, you couldn't do it.
+
+```
+
+
+
+    func testSameCoordinates() throws {
+        // Should return the same coordinates back and forth
+        let userCoords = CLLocationCoordinate2D(latitude: 41.87579360778173, longitude: -87.6189474796952)
+        let entCoords = buckingham
+
+        let pos = gem.haversineDistance(la1: entCoords.latitude, lo1: entCoords.longitude, la2: userCoords.latitude, lo2: userCoords.longitude)
+        XCTAssertEqual(pos, 0)
+        let inverse = gem.inverseHaversine(la: userCoords.latitude, lo: userCoords.longitude, distance: 0, direction: 0)
+        XCTAssertEqual(userCoords.latitude, inverse.latitude)
+        XCTAssertEqual(userCoords.longitude, inverse.longitude)
+    }
+
+    func testNorth() throws {
+        // Should find accurate location for north bearing
+        let coords3 = CLLocationCoordinate2D(latitude: 42.09917158204169, longitude: -87.6189474796952)
+        let pos2 = gem.haversineDistance(la1: coords3.latitude, lo1: coords3.longitude, la2: buckingham.latitude, lo2: buckingham.longitude)
+        let inverse2 = gem.inverseHaversine(la: buckingham.latitude, lo: buckingham.longitude, distance: pos2, direction: 2)
+        // Accurate to 9 decimal places. This is a fraction of an inch, we good
+        XCTAssertEqual(round(coords3.longitude * 1000000000) / 1000000000.0, round(inverse2.longitude * 1000000000) / 1000000000.0)
+        XCTAssertEqual(round(coords3.latitude * 1000000000) / 1000000000.0, round(inverse2.latitude * 1000000000) / 1000000000.0)
+    }
+
+    func testEast() throws {
+        // Should find accurate location for east bearing
+        let coords3 = CLLocationCoordinate2D(latitude: 41.875403244, longitude: -87.318948854)
+        let pos2 = gem.haversineDistance(la1: coords3.latitude, lo1: coords3.longitude, la2: buckingham.latitude, lo2: buckingham.longitude)
+        let inverse2 = gem.inverseHaversine(la: buckingham.latitude, lo: buckingham.longitude, distance: pos2, direction: 0.5)
+        // Accurate to 9 decimal places. This is a fraction of an inch, we good
+        XCTAssertEqual(round(coords3.longitude * 1000000000) / 1000000000.0, round(inverse2.longitude * 1000000000) / 1000000000.0)
+        XCTAssertEqual(round(coords3.latitude * 1000000000) / 1000000000.0, round(inverse2.latitude * 1000000000) / 1000000000.0)
+    }
+
+    func testCoordsToPos() throws {
+        // Should find accurate location for east bearing
+        let pos1 = SIMD3<Float>(x: 3.0, y: 0.0, z: 4.0)
+        let usercoords = CLLocationCoordinate2D(latitude: 41.875403244, longitude: -87.318948854)
+        let userpos = SIMD3<Float>(x: 2.0, y: 2.0, z: -9.0)
+        let coords1 = gem.positionToCoords(usercoords, userpos, pos1)
+        let pos2 = gem.coordsToPosition(coords1, usercoords, userpos)
+        XCTAssertEqual(pos1.x, pos2.x, accuracy: 0.01)
+        XCTAssertEqual(pos1.z, pos2.z, accuracy: 0.01)
+    }
+
+```
+
+````
+    func coordsToPosition(_ coords: CLLocationCoordinate2D, _ deviceCoords: CLLocationCoordinate2D, _ deviceLocation: SIMD3<Float>) -> SIMD3<Float> {
+        var vert = haversineDistance(la1: coords.latitude, lo1: coords.longitude, la2: deviceCoords.latitude, lo2: coords.longitude)
+        var horiz = haversineDistance(la1: deviceCoords.latitude, lo1: deviceCoords.longitude, la2: deviceCoords.latitude, lo2: coords.longitude)
+
+        if (deviceCoords.longitude < 0) {
+            // User is in the western hemisphere
+        } else {
+
+        }
+
+        if (deviceCoords.longitude > coords.longitude) {
+            // User is east of the grafent
+            horiz *= -1
+        }
+        if (deviceCoords.latitude < coords.latitude) {
+            // User is south of the grafent
+            vert *= -1
+        }
+
+        let horiz2 = Float(horiz)
+        let vert2 = Float(vert)
+
+        return SIMD3(x: horiz2 + deviceLocation.x, y: 0.0, z: vert2 + deviceLocation.z)
+    }
+    ```
+````
