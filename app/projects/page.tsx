@@ -8,7 +8,7 @@ export default function Page() {
     <section>
       <h2 className="font-medium text-2xl mb-8 tracking-tighter">Click on a project to see more</h2>
       <div className='flex flex-wrap px-4 py-4'>
-        {workCard('planmi', './planmi.png', 'Design and generate communicative language lessons', '/')}
+        {workCard('planmi', './planmi.png', 'Design and generate communicative language lessons', 'https://planmi.vercel.app')}
         {workCard('grifgraf', './grifgraf-full.png', 'Create virtual graffiti on real-life spaces using your iPhone camera', 'https://grifgraf.app')}
         {workCard('accountabl', './accountabl.png', 'Budget with a friend, easily track eachothers spending and goals', '/')}
         {workCard('VRCausality', './unity.jpg', 'VR environment for causal judgement experiment', 'https://github.com/ageofadz/VRCausality')}
