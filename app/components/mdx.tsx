@@ -164,7 +164,8 @@ let components = {
   LiveCode,
 };
 
-export function CustomMDX(props) {
+export async function CustomMDX(props) {
+  "use server"
   return (
     <MDXContent
       {...props}

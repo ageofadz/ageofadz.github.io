@@ -122,14 +122,9 @@ export default function Blog({ params }) {
           </p>
       </div>
       <article className="prose prose-quoteless prose-neutral dark:prose-invert">
+        {/* @ts-expect-error Server Component */}
         <CustomMDX source={post.content} />
       </article>
     </section>
   );
-}
-
-
-async function Views({ slug }: { slug: string }) {
-  let views = await getViewsCount();
-  return <ViewCounter allViews={views} slug={slug} />;
 }
