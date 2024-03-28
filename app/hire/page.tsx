@@ -32,6 +32,7 @@ export default function GuestbookPage() {
       ✅ Flexible contract terms to meet your development needs.
       </li>
       </ul>
+      Send me an <a href='mailto:samuel.lazier.robertson+website@gmail.com'>email</a> for more details.
     </section>
   );
 }
