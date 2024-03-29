@@ -1,17 +1,26 @@
 ---
 title: "Using Haversine/Vincenty Formulae for Geopositioning in ARKit"
 publishedAt: "2024-03-12"
-tags: ["ARKit", "AR"]
 summary: "How grifgraf turns lat/lon coordinates into local AR coordinates"
+image: "https://cdn.pixabay.com/photo/2019/09/22/16/20/location-4496459_1280.png"
+
 ---
 
 ## The problem
 
+<table align="left" width="150px" className="outline-double p-4 m-4">
+<i>
+<tr><p align="center"><img width='150px' src="/arkit-vincenty-geolocating/savedimage.png" /></p></tr>
+<tr><sub>grifgraf uses geodesy to create a world of virtual graffiti</sub></tr>
+</i>
+</table>
 One of the increasingly interesting use cases for AR is the ability to have persistent virtual content appearing in real-life locations, such as informational graphics outside of major landmarks, or directional content along a route.
 
-This use case is the core feature of grifgraf. Users on grifgraf post virtual graffiti onto real-life locations, which persist at those locations to be viewed by other users of the app.
+This use case is the core feature of [grifgraf](https://grifgraf.app). Users on grifgraf post virtual graffiti onto real-life locations, which persist at those locations to be viewed by other users of the app.
 
-I've found that therea are quite a few ways one could persist AR content at a real-life location, but I settled on one solution I will go talk about in this post. I may write future articles about the experiments I tried with other approaches.
+This blog post describes the method grifgraf uses to fulfill this use case.
+
+But first, I want to thank the folks at [Movable Type](https://www.movable-type.co.uk/) for their fantastic article about Vincenty Solutions linked [here](https://www.movable-type.co.uk/scripts/latlong-vincenty.html). Their explanations and code were really helpful for this project.
 
 ## Summary
 
@@ -27,27 +36,46 @@ The technical challenges here are the following:
 Precisely placing AR content in a real-life place requires deriving a distance in meters between two two-dimensional points on a sphere's surface, using the constant of the sphere's circumference.
 This is ultimately a geodesic problem - the earth is an oblong sphere (sorry flat earthers).
 
-The most accurate geodesic formulae I found for calculating distances between points on the eart are the <a href='https://en.wikipedia.org/wiki/Vincenty%27s_formulae'>Vincenty formulae</a>. The inverse problem solves, 🌎→📍, where the direct problem solves 📍→🌎.
+The most accurate geodesic formulae I found for calculating distances between points on the earth are the <a href='https://en.wikipedia.org/wiki/Vincenty%27s_formulae'>Vincenty formulae</a>. The inverse problem solves, 🌎→📍, where the direct problem solves 📍→🌎.
+
+<table width="500px" className="outline-double p-4 m-auto text-wrap">
+<i>
+<td><p align="center"><img width='250px' src="/arkit-vincenty-geolocating/columbo-taipei.PNG" /></p></td>
+<td><p align="center"><img width='300px' src="/arkit-vincenty-geolocating/columbo-taipei-map.jpg" /></p></td>
+Saving a gif of Columbo to this wall on Zongshan Road in Taipei results in its local coordinates being converted into geo coordinates and saved to the server.
+
+Those coordinates are later pulled from the server and converted to local coordinates when a user is nearby, where it's placed back into the spot it was saved back.
+</i>
+</table>
 
 ## The math
 
-IV(): Inverse Vincency Function
+The notation here maps to the notation found [here](https://en.wikipedia.org/wiki/Vincenty%27s_formulae).
 
-V(): Direct Vincency Function
+<table width="500px" className="outline-double p-4 m-auto text-wrap">
 
-G: previously saved graf, as captured from the server
+<td>
+<tr>IV(): Inverse Vincency Function</tr>
 
-U: user
+<tr>V(): Direct Vincency Function</tr>
 
-Φ: Latitude
+<tr>G: previously saved graf from the server</tr>
 
-L: Longitude
+<tr>U: user</tr>
+</td>
+<td>
+<tr>Φ: Latitude</tr>
 
-X: Local X (east-west)
+<tr>L: Longitude</tr>
 
-Y: Local Y (north-south)
+<tr>X: Local X (east-west)</tr>
+
+<tr>Y: Local Y (north-south)</tr>
+</td>
+</table>
 
 ### 🌎→📍 Inverse:
+
 
 IV(Φ<sub>u</sub> L<sub>u</sub>, Φ<sub>u</sub> L<sub>g</sub>) = distance east (<i>s<sub>1</sub></i>)
 
@@ -59,7 +87,6 @@ IV(Φ<sub>u</sub> L<sub>u</sub>, Φ<sub>g</sub> L<sub>u</sub>) = distance north 
 
 ### 📍→🌎 Direct:
 
-
 V(Φ<sub>u</sub> L<sub>u</sub>, <i>s<sub>1</sub></i>) = (Φ<sub>1</sub>, L<sub>g</sub>)
 
 V(Φ<sub>u</sub> L<sub>u</sub>, <i>s<sub>1</sub></i>) = (Φ<sub>g</sub>, L<sub>1</sub>)
@@ -70,100 +97,20 @@ V(Φ<sub>u</sub> L<sub>u</sub>, <i>s<sub>1</sub></i>) = (Φ<sub>g</sub>, L<sub>1
 
 <i>Given the user's lat/lon, and the distances north and east to the graf, the lat/lon of the graf is derived.</i>
 
+
 ## Implementation
 
+Note that the local coords (📍) are tracked with Swift's SIMD3 type, and the global coords (🌎) are tracked with Swift's CLLocationCoordinate2D type.
 
+Quaternion rotation is stored and tracked using [eastUpSouthQTarget](https://developers.google.com/ar/reference/ios/interface/GARGeospatialTransform#eastupsouthqtarget) and stored using Swift's SIMD4 type. This post does not go into detail about that process.
 
-## How do I test it?
-
-The following unit test checks that a coordinate pair 
-
-```
-    func testSameCoordinates() throws {
-        // Should return the same coordinates back and forth
-        let userCoords = CLLocationCoordinate2D(latitude: 41.87579360778173, longitude: -87.6189474796952)
-        let entCoords = buckingham
-
-        let pos = manager.vincenty(la1: entCoords.latitude, lo1: entCoords.longitude, la2: userCoords.latitude, lo2: userCoords.longitude)
-        XCTAssertEqual(pos, 0)
-        let inverse = manager.inverseVincenty(la: userCoords.latitude, lo: userCoords.longitude, distance: 0, direction: 0)
-        XCTAssertEqual(userCoords.latitude, inverse.latitude)
-        XCTAssertEqual(userCoords.longitude, inverse.longitude)
-    }
-```
-
-I tested this by going to a common area in my apartment building back in Chicago with my laptop, opening google maps, and using the "measure distance" tool to create reliable, easily calculted coordinate pairs.
-
-Also xcode tests, asserting the lat lons equal eachother.
-
-## Other attempts
-
-I like to talk about all the interesting hacks and workarounds I tried to make this work. Much effort went into experimenting to get this nice result you see above.
-
-My favorite has to be my attempt at using OpenStreetMap to create invisible surfaces in the AR world that map precisely onto real life walls.
-If this worked, it would have been really really cool because it meant that you could actually identify certain walls and the art on them.
-The downside would be that if you wanted to tag something that wasn't on OSM, like an electrical box or temporary structure of some kind, you couldn't do it.
+### 🌎→📍 Inverse Vincenty
 
 ```
-
-
-
-    func testSameCoordinates() throws {
-        // Should return the same coordinates back and forth
-        let userCoords = CLLocationCoordinate2D(latitude: 41.87579360778173, longitude: -87.6189474796952)
-        let entCoords = buckingham
-
-        let pos = gem.haversineDistance(la1: entCoords.latitude, lo1: entCoords.longitude, la2: userCoords.latitude, lo2: userCoords.longitude)
-        XCTAssertEqual(pos, 0)
-        let inverse = gem.inverseHaversine(la: userCoords.latitude, lo: userCoords.longitude, distance: 0, direction: 0)
-        XCTAssertEqual(userCoords.latitude, inverse.latitude)
-        XCTAssertEqual(userCoords.longitude, inverse.longitude)
-    }
-
-    func testNorth() throws {
-        // Should find accurate location for north bearing
-        let coords3 = CLLocationCoordinate2D(latitude: 42.09917158204169, longitude: -87.6189474796952)
-        let pos2 = gem.haversineDistance(la1: coords3.latitude, lo1: coords3.longitude, la2: buckingham.latitude, lo2: buckingham.longitude)
-        let inverse2 = gem.inverseHaversine(la: buckingham.latitude, lo: buckingham.longitude, distance: pos2, direction: 2)
-        // Accurate to 9 decimal places. This is a fraction of an inch, we good
-        XCTAssertEqual(round(coords3.longitude * 1000000000) / 1000000000.0, round(inverse2.longitude * 1000000000) / 1000000000.0)
-        XCTAssertEqual(round(coords3.latitude * 1000000000) / 1000000000.0, round(inverse2.latitude * 1000000000) / 1000000000.0)
-    }
-
-    func testEast() throws {
-        // Should find accurate location for east bearing
-        let coords3 = CLLocationCoordinate2D(latitude: 41.875403244, longitude: -87.318948854)
-        let pos2 = gem.haversineDistance(la1: coords3.latitude, lo1: coords3.longitude, la2: buckingham.latitude, lo2: buckingham.longitude)
-        let inverse2 = gem.inverseHaversine(la: buckingham.latitude, lo: buckingham.longitude, distance: pos2, direction: 0.5)
-        // Accurate to 9 decimal places. This is a fraction of an inch, we good
-        XCTAssertEqual(round(coords3.longitude * 1000000000) / 1000000000.0, round(inverse2.longitude * 1000000000) / 1000000000.0)
-        XCTAssertEqual(round(coords3.latitude * 1000000000) / 1000000000.0, round(inverse2.latitude * 1000000000) / 1000000000.0)
-    }
-
-    func testCoordsToPos() throws {
-        // Should find accurate location for east bearing
-        let pos1 = SIMD3<Float>(x: 3.0, y: 0.0, z: 4.0)
-        let usercoords = CLLocationCoordinate2D(latitude: 41.875403244, longitude: -87.318948854)
-        let userpos = SIMD3<Float>(x: 2.0, y: 2.0, z: -9.0)
-        let coords1 = gem.positionToCoords(usercoords, userpos, pos1)
-        let pos2 = gem.coordsToPosition(coords1, usercoords, userpos)
-        XCTAssertEqual(pos1.x, pos2.x, accuracy: 0.01)
-        XCTAssertEqual(pos1.z, pos2.z, accuracy: 0.01)
-    }
-
-```
-
-````
     func coordsToPosition(_ coords: CLLocationCoordinate2D, _ deviceCoords: CLLocationCoordinate2D, _ deviceLocation: SIMD3<Float>) -> SIMD3<Float> {
-        var vert = haversineDistance(la1: coords.latitude, lo1: coords.longitude, la2: deviceCoords.latitude, lo2: coords.longitude)
-        var horiz = haversineDistance(la1: deviceCoords.latitude, lo1: deviceCoords.longitude, la2: deviceCoords.latitude, lo2: coords.longitude)
-
-        if (deviceCoords.longitude < 0) {
-            // User is in the western hemisphere
-        } else {
-
-        }
-
+        var vert = vincentyDistance(la1: coords.latitude, lo1: coords.longitude, la2: deviceCoords.latitude, lo2: coords.longitude)
+        var horiz = vincentyDistance(la1: deviceCoords.latitude, lo1: deviceCoords.longitude, la2: deviceCoords.latitude, lo2: coords.longitude)
+        
         if (deviceCoords.longitude > coords.longitude) {
             // User is east of the grafent
             horiz *= -1
@@ -172,11 +119,123 @@ The downside would be that if you wanted to tag something that wasn't on OSM, li
             // User is south of the grafent
             vert *= -1
         }
-
+        
         let horiz2 = Float(horiz)
         let vert2 = Float(vert)
-
+        
         return SIMD3(x: horiz2 + deviceLocation.x, y: 0.0, z: vert2 + deviceLocation.z)
     }
-    ```
-````
+```
+
+###  📍→🌎 Direct 
+```
+    func positionToCoords(_ userCoords: CLLocationCoordinate2D, _ userPosition: SIMD3<Float>, _ position: SIMD3<Float>) -> CLLocationCoordinate2D {
+        let east = position.x - userPosition.x
+        let north = userPosition.z - position.z
+        let latCoord = vincentyLoc(la: userCoords.latitude, lo: userCoords.longitude, distance: Double(north), direction: 2)
+        let lonCoord = vincentyLoc(la: userCoords.latitude, lo: userCoords.longitude, distance: Double(east), direction: 0.5)
+        return CLLocationCoordinate2D(latitude: latCoord.latitude, longitude: lonCoord.longitude)
+    }
+```
+## Unit tests
+
+I used Buckingham Fountain in Chicago as the point of reference for unit testing.
+
+```
+let buckingham = CLLocationCoordinate2D(latitude: 41.87579360778173, longitude: -87.6189474796952)
+```
+
+Sanity check for same coordinates and 0 distance:
+
+```
+    func testSameCoordinates() throws {
+        // Should return the same coordinates back and forth
+        let userCoords = buckingham
+        // Buckingham fountain
+        let entCoords = userCoords
+
+        let pos = manager.vincentyDistance(la1: entCoords.latitude, lo1: entCoords.longitude, la2: userCoords.latitude, lo2: userCoords.longitude)
+        XCTAssertEqual(pos, 0)
+        let inverse = manager.vincentyLoc(la: userCoords.latitude, lo: userCoords.longitude, distance: 0, direction: 0)
+        XCTAssertEqual(userCoords.latitude, inverse.latitude)
+        XCTAssertEqual(userCoords.longitude, inverse.longitude)
+    }
+```
+
+Testing that known coordinates 25km north of Buckingham Fountain are recognized as being 25km north, and that when that distance is added to the Buckingham coordinates, we get (very close to) those same coordinates back:
+
+```
+
+    
+    func testNorth() throws {
+        // Should find accurate location for north bearing
+        let coords = CLLocationCoordinate2D(latitude: 42.09917158204169, longitude: -87.6189474796952)
+        let pos = gem.vincentyDistance(la1: coords.latitude, lo1: coords.longitude, la2: buckingham.latitude, lo2: buckingham.longitude)
+        let inverse = gem.vincentyLoc(la: buckingham.latitude, lo: buckingham.longitude, distance: pos, direction: 2)
+        // Accurate to 9 decimal places. This is a fraction of an inch, we good
+        XCTAssertEqual(round(coords.longitude * 1000000000) / 1000000000.0, round(inverse.longitude * 1000000000) / 1000000000.0)
+        XCTAssertEqual(round(coords.latitude * 1000000000) / 1000000000.0, round(inverse.latitude * 1000000000) / 1000000000.0)
+    }
+
+```
+
+Testing that known coordinates 25km east of Buckingham Fountain are recognized as being 25km east, and that when that distance is added to the Buckingham coordinates, we get (very close to) those same coordinates back:
+
+```
+    
+    func testEast() throws {
+        // Should find accurate location for east bearing
+        let coords = CLLocationCoordinate2D(latitude: 41.875403244, longitude: -87.318948854)
+        let pos = gem.vincentyDistance(la1: coords.latitude, lo1: coords.longitude, la2: buckingham.latitude, lo2: buckingham.longitude)
+        let inverse = gem.vincentyLoc(la: buckingham.latitude, lo: buckingham.longitude, distance: pos, direction: 0.5)
+        // Accurate to 9 decimal places. This is a fraction of an inch, we good
+        XCTAssertEqual(round(coords.longitude * 1000000000) / 1000000000.0, round(inverse.longitude * 1000000000) / 1000000000.0)
+        XCTAssertEqual(round(coords.latitude * 1000000000) / 1000000000.0, round(inverse.latitude * 1000000000) / 1000000000.0)
+    }
+    
+```
+
+Any coordinate pair can be plugged into these tests and they will pass.
+
+
+<table width="500px" className="outline-double p-4 m-auto text-wrap">
+<i>
+<td><p align="center"><img width='500px' src="/arkit-vincenty-geolocating/gmaps.png" /></p></td>
+Here's a google maps approximation of the points used in the unit test. Each test starts at the middle point (Buckingham Fountain) and measures the distance to a point in Lake Michigan. Plugging that distance and direction into vincentyDistance, it leaps to the correct point (with a small margin of error).
+</i>
+</table>
+
+
+## Other attempts
+
+
+<table align="left" width="200px" className="outline-double p-4 m-4">
+<i>
+<tr><p align="center"><img width='200px' src="/arkit-vincenty-geolocating/findthisspot.png" /></p></tr>
+<tr><sub>Early tests of grifgraf using local world sessions saved to geographic radii</sub></tr>
+</i>
+</table>
+
+I'd like to talk about all the interesting hacks and workarounds I tried to make this work. Much effort went into experimenting to get this nice result you see above.
+
+Initially, I serialized the [arSession](https://developer.apple.com/documentation/arkit/arkit_in_ios/data_management/saving_and_loading_world_data), saving it to geographic radius and uploaded it to a server. When a user entered the radius, the camera would say "point your phone at this area" with a captured image of that area, and then load the session from the internet.
+
+It was accurate and reliable, but it sucked. It sucked because real graffiti doesn't wait for you to stand in front of it for a while to appear. It's not realistic, its inefficient. and it also would only work on iPhone.
+
+
+<table align="right" width="200px" className="outline-double p-4 m-4">
+<i>
+<tr><p align="center"><img width='200px' src="/arkit-vincenty-geolocating/flatwall.png" /></p></tr>
+<tr><sub>There is no surface dection - OpenStreetMap told grifgraf about this wall.</sub></tr>
+</i>
+</table>
+
+My favorite attempt has to be my attempt at using OpenStreetMap to create invisible surfaces in the AR world that map precisely onto real life walls. This worked by grabbing the users immediate area in OSM, and turning any building nodes into square nodes that other AR content will stick to.
+If this worked, it would have been really really cool because it meant that you could actually identify certain walls and the art on them, and generate the entire world of graffiti as a 3D model in blender.
+
+
+
+The downside would be that if you wanted to put a graf on something that wasn't on OSM, like an electrical box or temporary structure of some kind, you couldn't do it.
+
+The contributors to OSM are doing fantastic work creating a detailed map of the real world and such data has many great use cases, but highly accurate geo-tracked AR experiences aren't one of them.
+The data just isn't accurate enough.

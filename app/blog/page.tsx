@@ -6,7 +6,7 @@ import { getBlogPosts } from 'app/db/blog';
 
 export const metadata = {
   title: 'Blog',
-  description: 'Read my thoughts on software development, design, and more.',
+  description: 'Information about my projects',
 };
 
 export default function BlogPage() {
@@ -33,9 +33,12 @@ export default function BlogPage() {
             href={`/blog/${post.slug}`}
           >
             <div className="w-full flex flex-col">
+              <div className="flex flex-row">
               <p className="text-neutral-900 dark:text-neutral-100 tracking-tight">
                 {post.metadata.title}
               </p>
+              <img src={post.metadata.image} className='rounded-full w-20 h-20' />
+              </div>
               <Suspense fallback={<p className="h-6" />}>
                 <Views slug={post.slug} />
               </Suspense>
