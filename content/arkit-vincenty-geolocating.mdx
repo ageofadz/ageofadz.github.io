@@ -1,33 +1,82 @@
 ---
 title: "Using Haversine/Vincenty Formulae for Geopositioning in ARKit"
 publishedAt: "2024-03-12"
+tags: ["ARKit", "AR"]
 summary: "How grifgraf turns lat/lon coordinates into local AR coordinates"
 ---
 
 ## The problem
 
-The central technical requirement of grifgraf, which makes it unique from other AR-enabled apps, is that objects can be saved onto real-life locations and viewed later at that exact spot.
+One of the increasingly interesting use cases for AR is the ability to have persistent virtual content appearing in real-life locations, such as informational graphics outside of major landmarks, or directional content along a route.
 
-In effect, this requires that we can convert local X, Y, Z, and rotation values to latitude, longitude, altitude, and absolute rotational data (we will call it LLAR from now on) of objects and back seamlessly.
+This use case is the core feature of grifgraf. Users on grifgraf post virtual graffiti onto real-life locations, which persist at those locations to be viewed by other users of the app.
 
-Here's how I tackled this with [grifgraf](https://grifgraf.app).
+I've found that therea are quite a few ways one could persist AR content at a real-life location, but I settled on one solution I will go talk about in this post. I may write future articles about the experiments I tried with other approaches.
 
-It also requires that we need to know the location and rotation of the
-user's phone. I've written in detail about [getting a precise user
-location]() for this purpose. This post is about what I did _once we have
-gotten a precise user location_.
+## Summary
 
-## From lat/lon to local coordinates
+We are dealing with two different sets of coordinates:
+- 📍 Local coordinates: This refers to the rotation, X, Y and Z coordinates ARKit uses to position virtual content in relation to your phone's camera.
+- 🌎 Geo coordinates: This refers to the latitude, longitude, altitude, and rotation values of virtual content
 
-We're going to start ahead and move backwards with this implementation - the relatively simpler process is taking an existing graf, with its LLAR saved on the backend, and placing it into ARKits local coordinate space.
+The technical challenges here are the following:
+- 📍&rarr;🌎 Converting local coordinates into geo coordinates. 
+- 🌎&rarr;📍 Converting geo coordinates into local coordinates.
 
-At the point when the user's precise location is grabbed, we re-run the AR session, which sets the location of the phone as the world's origin point. This isn't necessary but it makes the math just a bit simpler.
 
-We use the
+Precisely placing AR content in a real-life place requires deriving a distance in meters between two two-dimensional points on a sphere's surface, using the constant of the sphere's circumference.
+This is ultimately a geodesic problem - the earth is an oblong sphere (sorry flat earthers).
 
-## From local to lat/lon coordinates
+The most accurate geodesic formulae I found for calculating distances between points on the eart are the <a href='https://en.wikipedia.org/wiki/Vincenty%27s_formulae'>Vincenty formulae</a>. The inverse problem solves, 🌎→📍, where the direct problem solves 📍→🌎.
+
+## The math
+
+IV(): Inverse Vincency Function
+
+V(): Direct Vincency Function
+
+G: previously saved graf, as captured from the server
+
+U: user
+
+Φ: Latitude
+
+L: Longitude
+
+X: Local X (east-west)
+
+Y: Local Y (north-south)
+
+### 🌎→📍 Inverse:
+
+IV(Φ<sub>u</sub> L<sub>u</sub>, Φ<sub>u</sub> L<sub>g</sub>) = distance east (<i>s<sub>1</sub></i>)
+
+IV(Φ<sub>u</sub> L<sub>u</sub>, Φ<sub>g</sub> L<sub>u</sub>) = distance north (<i>s<sub>2</sub></i>)
+
+(G<sub>x</sub>, G<sub>y</sub>) = (U<sub>x</sub>, U<sub>y</sub>) + (<i>s<sub>1</sub></i>, <i>s<sub>2</sub></i>)
+
+<i>Given the user's lat/lon, and the graf's lat/lon, the distance east and north are derived.</i>
+
+### 📍→🌎 Direct:
+
+
+V(Φ<sub>u</sub> L<sub>u</sub>, <i>s<sub>1</sub></i>) = (Φ<sub>1</sub>, L<sub>g</sub>)
+
+V(Φ<sub>u</sub> L<sub>u</sub>, <i>s<sub>1</sub></i>) = (Φ<sub>g</sub>, L<sub>1</sub>)
+
+↓
+
+(Φ<sub>g</sub>, L<sub>g</sub>)
+
+<i>Given the user's lat/lon, and the distances north and east to the graf, the lat/lon of the graf is derived.</i>
+
+## Implementation
+
+
 
 ## How do I test it?
+
+The following unit test checks that a coordinate pair 
 
 ```
     func testSameCoordinates() throws {
@@ -35,9 +84,9 @@ We use the
         let userCoords = CLLocationCoordinate2D(latitude: 41.87579360778173, longitude: -87.6189474796952)
         let entCoords = buckingham
 
-        let pos = gem.haversineDistance(la1: entCoords.latitude, lo1: entCoords.longitude, la2: userCoords.latitude, lo2: userCoords.longitude)
+        let pos = manager.vincenty(la1: entCoords.latitude, lo1: entCoords.longitude, la2: userCoords.latitude, lo2: userCoords.longitude)
         XCTAssertEqual(pos, 0)
-        let inverse = gem.inverseHaversine(la: userCoords.latitude, lo: userCoords.longitude, distance: 0, direction: 0)
+        let inverse = manager.inverseVincenty(la: userCoords.latitude, lo: userCoords.longitude, distance: 0, direction: 0)
         XCTAssertEqual(userCoords.latitude, inverse.latitude)
         XCTAssertEqual(userCoords.longitude, inverse.longitude)
     }
