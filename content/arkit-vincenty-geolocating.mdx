@@ -7,13 +7,12 @@ image: "https://cdn.pixabay.com/photo/2019/09/22/16/20/location-4496459_1280.png
 ---
 
 ## The problem
-
-<table align="left" width="150px" className="outline-double p-4 m-4">
-<i>
-<tr><p align="center"><img width='150px' src="/arkit-vincenty-geolocating/savedimage.png" /></p></tr>
-<tr><sub>grifgraf uses geodesy to create a world of virtual graffiti</sub></tr>
+<p>
+<div className="outline-double p-4 m-4 w-36 float-left">
+<i><p ><img src="/arkit-vincenty-geolocating/savedimage.png" className='w-full' /></p>
+<tr className="max-w-3 text-wrap overflow-hidden">grifgraf uses geodesy to create a world of virtual graffiti</tr>
 </i>
-</table>
+</div>
 One of the increasingly interesting use cases for AR is the ability to have persistent virtual content appearing in real-life locations, such as informational graphics outside of major landmarks, or directional content along a route.
 
 This use case is the core feature of [grifgraf](https://grifgraf.app). Users on grifgraf post virtual graffiti onto real-life locations, which persist at those locations to be viewed by other users of the app.
@@ -38,15 +37,17 @@ This is ultimately a geodesic problem - the earth is an oblong sphere (sorry fla
 
 The most accurate geodesic formulae I found for calculating distances between points on the earth are the <a href='https://en.wikipedia.org/wiki/Vincenty%27s_formulae'>Vincenty formulae</a>. The inverse problem solves, 🌎→📍, where the direct problem solves 📍→🌎.
 
-<table width="500px" className="outline-double p-4 m-auto text-wrap">
+<div className="outline-double p-4 m-4 w-4/5">
 <i>
-<td><p align="center"><img width='250px' src="/arkit-vincenty-geolocating/columbo-taipei.PNG" /></p></td>
-<td><p align="center"><img width='300px' src="/arkit-vincenty-geolocating/columbo-taipei-map.jpg" /></p></td>
+<div className="flex flex-row">
+<p align="center"><img width='250px' src="/arkit-vincenty-geolocating/columbo-taipei.PNG" /></p>
+<p align="center"><img width='300px' src="/arkit-vincenty-geolocating/columbo-taipei-map.jpg" /></p>
+</div>
 Saving a gif of Columbo to this wall on Zongshan Road in Taipei results in its local coordinates being converted into geo coordinates and saved to the server.
 
 Those coordinates are later pulled from the server and converted to local coordinates when a user is nearby, where it's placed back into the spot it was saved back.
 </i>
-</table>
+</div>
 
 ## The math
 
@@ -198,23 +199,23 @@ Testing that known coordinates 25km east of Buckingham Fountain are recognized a
 Any coordinate pair can be plugged into these tests and they will pass.
 
 
-<table width="500px" className="outline-double p-4 m-auto text-wrap">
+<div className="outline-double p-4 m-4 w-4/5">
 <i>
-<td><p align="center"><img width='500px' src="/arkit-vincenty-geolocating/gmaps.png" /></p></td>
+<p align="center"><img className="w-4/5" src="/arkit-vincenty-geolocating/gmaps.png" /></p>
 Here's a google maps approximation of the points used in the unit test. Each test starts at the middle point (Buckingham Fountain) and measures the distance to a point in Lake Michigan. Plugging that distance and direction into vincentyDistance, it leaps to the correct point (with a small margin of error).
 </i>
-</table>
+</div>
 
 
 ## Other attempts
 
 
-<table align="left" width="200px" className="outline-double p-4 m-4">
+<div className="outline-double p-4 m-4 w-60 float-left">
 <i>
-<tr><p align="center"><img width='200px' src="/arkit-vincenty-geolocating/findthisspot.png" /></p></tr>
-<tr><sub>Early tests of grifgraf using local world sessions saved to geographic radii</sub></tr>
+<p align="center"><img className="w-4/5" src="/arkit-vincenty-geolocating/findthisspot.png" /></p>
+<sub>Early tests of grifgraf using local world sessions saved to geographic radii</sub>
 </i>
-</table>
+</div>
 
 I'd like to talk about all the interesting hacks and workarounds I tried to make this work. Much effort went into experimenting to get this nice result you see above.
 
@@ -223,12 +224,12 @@ Initially, I serialized the [arSession](https://developer.apple.com/documentatio
 It was accurate and reliable, but it sucked. It sucked because real graffiti doesn't wait for you to stand in front of it for a while to appear. It's not realistic, its inefficient. and it also would only work on iPhone.
 
 
-<table align="right" width="200px" className="outline-double p-4 m-4">
+<div className="outline-double p-4 m-4 w-60 float-right">
 <i>
-<tr><p align="center"><img width='200px' src="/arkit-vincenty-geolocating/flatwall.png" /></p></tr>
-<tr><sub>There is no surface dection - OpenStreetMap told grifgraf about this wall.</sub></tr>
+<p align="center"><img className="w-4/5" src="/arkit-vincenty-geolocating/flatwall.png" /></p>
+<sub>There is no surface dection - OpenStreetMap told grifgraf about this wall.</sub>
 </i>
-</table>
+</div>
 
 My favorite attempt has to be my attempt at using OpenStreetMap to create invisible surfaces in the AR world that map precisely onto real life walls. This worked by grabbing the users immediate area in OSM, and turning any building nodes into square nodes that other AR content will stick to.
 If this worked, it would have been really really cool because it meant that you could actually identify certain walls and the art on them, and generate the entire world of graffiti as a 3D model in blender.
@@ -239,3 +240,4 @@ The downside would be that if you wanted to put a graf on something that wasn't 
 
 The contributors to OSM are doing fantastic work creating a detailed map of the real world and such data has many great use cases, but highly accurate geo-tracked AR experiences aren't one of them.
 The data just isn't accurate enough.
+</p>
