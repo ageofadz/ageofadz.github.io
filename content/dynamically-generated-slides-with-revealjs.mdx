@@ -1,0 +1,161 @@
+---
+title: "Dynamically Generating Slideshows with RevealJS and React"
+publishedAt: "2024-04-03"
+summary: "How planmi generates interactive slide decks customized by a React UI"
+image: "https://static.slid.es/reveal/logo-v1/reveal-white-text.svg"
+
+---
+
+## The problem
+<p>
+<div className="outline-double p-4 m-4 w-56 float-left">
+<i><img src="/dynamically-generated-slides-with-revealjs/planmi.png" className='w-full' />
+<tr className="max-w-3 text-wrap overflow-hidden">“I choose a lazy person to do a hard job. Because a lazy person will find an easy way to do it.” - Bill Gates</tr>
+<tr />
+<tr className="max-w-3 text-wrap overflow-hidden">“I don't really feel like planning all these lessons.” - Me</tr>
+</i>
+</div>
+On my interactive lesson planning app [planmi](https://planmi.vercel.app), teachers can enter target language such as vocab, grammar points, and receptive texts, select activities and handouts, and the app will generate a slide deck and downloadable handouts.
+
+I use [reveal.js](https://revealjs.com/) for the slideshows, combined with a small amount of React finagling to allow them to be dynamically generated based on user input. The handouts will be discussed in another article.
+
+## Summary
+
+Reveal.js is primarily designed to be a library for humans to program individual slideshows - not necessarily for programmatically generating slideshows using user input and boilerplate slides. However, the latter is possible in React if:
+ - Reveal is asynchronously imported and initialized in `useEffect()`
+ - The slides are generated as an array of customizable `<section>` JSX elements
+ - The exported JSX element's parent divs are attributed with the `revealjs` and `slides` classes respectively.
+
+The result is that reveal.js renders and manages the presentation through the browser DOM, with React generating and rendering the JSX content in the slides.
+
+
+<div className="outline-double p-4 m-4 w-56 float-right">
+<i><img src="/dynamically-generated-slides-with-revealjs/googlemarket.png" className='w-full' />
+<tr className="max-w-3 text-wrap overflow-hidden">It's just not worth asking your school's IT department to approve planmi as a Google Workspace extension, even if it means it works natively with Google Slides. Plus, we can be fancier with reveal.js</tr>
+</i>
+</div>
+
+## Why reveal.js?
+
+When starting work on planmi, I had a few options for how to handle lesson generation. The first option was integrating with the [Google Slides API](https://developers.google.com/slides) and having it programatically create slideshows there. This would have been the most straightforward user experience, since Google Slides are widely used by teachers, including myself.
+
+However, it would have meant that the organization managing the teachers Google account would have to manually approve planmi for use by the teacher. Also, not everyone has a Google account.
+
+Another option was to generate a PowerPoint. There happens to be a library for generating PowerPoints in JS called [PptxGenJS](https://gitbrent.github.io/PptxGenJS/), and it's quite powerful, even allowing HTML inside of the slides. However, I ran into issues embedding video and getting formatting right when importing a pptx file to Google Slides. Opening the PowerPoint offline is a possibility, but that creates more issues for the teacher.
+
+I went with [reveal.js](https://revealjs.com/) because it's highly compatible, not requiring Microsoft Office or a Google account, but can still be accessed online through a URL. It also has a lot of bells and whistles that can make a PowerPoint more interactive and fun for language lessons, especially considering that javascript can be inserted into slides.
+
+
+<div className="outline-double p-4 m-4 w-3/4">
+<i><p ><img src="/dynamically-generated-slides-with-revealjs/1.png" className='w-full' /></p>
+<tr className="max-w-3 text-wrap overflow-hidden">Activities like this randomized vocab multiple-choice game can be generated and loaded onto your slideshow easily with planmi</tr>
+</i>
+</div>
+
+## The presentation class
+
+The presentations planmi generates are basically just objects containing:
+- An array of activities
+- An array of target language
+- An options object
+
+When the frontend has one of these, it can iterate through the activities array and fill an array of JSX elements with slides, denoted with the `<section>` tab per Reveal's format. Since these are JSX, variables can be used in them.
+
+As that array of sections is generating, reveal is imported and initialized inside of `useEffect`. We cannot import reveal.js before the component has been mounted in the DOM, and the `navigator` element becomes available. When this is done, reveal.js is ready to render a slideshow out of the array returned from the `slides()` function.
+
+We return an element with a presentation container (`className="reveal"`) and a child div specifying slides (`className="slides"`), and just call the `slides()` functional component to fill the container. That's the whole slideshow!
+
+```
+  return (
+        <div className="reveal">
+            <div className="slides">
+                {slides()}
+            </div>
+        </div>
+  )
+```
+
+## Theming
+<div className="outline-double p-4 m-4 w-56 float-left">
+<i><img src="/dynamically-generated-slides-with-revealjs/themes.png" className='w-full' />
+<tr className="max-w-3 text-wrap overflow-hidden">When a user selects a theme, a CSS file by that name is dynamically imported and applied to the `slides` div.</tr>
+</i>
+</div>
+
+Reveal has a variety of [themes](https://revealjs.com/themes/), and while users are setting presentation options, they can select one of these themes. The themes are bundled with planmi and are accessible through an import.
+
+Since the presentation lives in its own window, we can safely import a single css file for Reveal's base theme, and import a specific theme dynamically from the user's preferences:
+  ```
+  import '../theme/reveal.css'
+  ...
+  import ('../theme/' + options.theme?.toString() ?? 'white' + '.css')
+  ```
+
+The top-level import of the reveal theme is obviously necessary for reveal.js to function correctly, and is always going to be in the presentation element. The latter import is dynamic and relies on either a user's choice or a default fallback, so it lives inside of the `Presentation()` function, and applies to the `className="slides"` child container.
+
+## The result
+
+Here's what it all looks like together:
+
+```
+'use client'
+import React, { useEffect } from 'react'
+import '../theme/reveal.css'
+...
+export default function Presentation ({options, tl, rows}: Lesson): React.JSX.Element {
+
+
+  import ('../theme/' + options.theme?.toString() ?? 'white' + '.css')
+
+  const slides = (): React.JSX.Element[] => {
+    const slideList = []
+    for (const row of rows) {
+      switch (row.name as Activity) {
+        // Code to generate each individual slide, push them to the slideList object
+      }
+    }
+
+    return slideList
+  }
+
+  useEffect(() => {
+    const initReveal = async (): Promise<void> => {
+      const Reveal = (await import('reveal.js')).default
+      void Reveal.initialize({
+        controls: true,
+        hash: true,
+        margin: 0.1
+      })
+    }
+    initReveal().then(() => { console.log('reveal inited') }).catch(() => { console.error('reveal not inited') })
+  }, [])
+
+  return (
+        <div className="reveal">
+            <div className="slides">
+                {slides()}
+            </div>
+        </div>
+  )
+
+}
+```
+
+<div className="outline-double p-4 m-4 w-3/4">
+<i><p ><img src="/dynamically-generated-slides-with-revealjs/planmi.jpg" className='w-full' /></p>
+<tr className="max-w-3 text-wrap overflow-hidden">Here's a diagram showing what's going on. Red is React, black is reveal.js.</tr>
+</i>
+</div>
+
+</p>
+
+## Bonus: cool use cases
+
+Putting JSX into reveal slides actually really, really powerful. There are more use cases this kind of integration could fill than I can think of here, but here are some notable ones that come to mind:
+
+- Live audience reactions and polling built <i>directly into the slides they're seeing!</i>
+- Using form content on a reveal deck to make a cool registration or scheduling flow for a website
+- Creating utilities that convert quarterly or monthly reports into slide decks <i>automatically</i> simply by entering the relevant variables and letting JSX boilerplate do its magic
+- Putting minigames inside of a slideshow
+- Creating a slideshow CYOA, potentially with randomized elements. Fantastic for a dnd campaign.
+- ⬆ Doing that, but automating the generation of these dungeons by entering existing data about items, hazards, and monsters you want. The little brother of planmi might be for dungeon masters.
