@@ -3,8 +3,8 @@ import { getGuestbookEntries } from 'app/db/queries';
 import { SignIn, SignOut } from './buttons';
 
 export const metadata = {
-  title: 'Guestbook',
-  description: 'Sign my guestbook and leave your mark.',
+  title: 'Hire me',
+  description: 'Information about hiring me.',
 };
 
 export default function GuestbookPage() {
