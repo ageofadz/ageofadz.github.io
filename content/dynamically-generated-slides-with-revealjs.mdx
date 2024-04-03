@@ -43,7 +43,7 @@ However, it would have meant that the organization managing the teachers Google 
 
 Another option was to generate a PowerPoint. There happens to be a library for generating PowerPoints in JS called [PptxGenJS](https://gitbrent.github.io/PptxGenJS/), and it's quite powerful, even allowing HTML inside of the slides. However, I ran into issues embedding video and getting formatting right when importing a pptx file to Google Slides. Opening the PowerPoint offline is a possibility, but that creates more issues for the teacher.
 
-I went with [reveal.js](https://revealjs.com/) because it's highly compatible, not requiring Microsoft Office or a Google account, but can still be accessed online through a URL. It also has a lot of bells and whistles that can make a PowerPoint more interactive and fun for language lessons, especially considering that javascript can be inserted into slides.
+I went with [reveal.js](https://revealjs.com/) because it's highly compatible, not requiring Microsoft Office or a Google account, but can still be accessed online through a URL. It also has a lot of bells and whistles that can make a slide deck more interactive and fun for language lessons, especially considering that JavaScript can be inserted into slides.
 
 
 <div className="outline-double p-4 m-4 w-3/4">
@@ -151,7 +151,7 @@ export default function Presentation ({options, tl, rows}: Lesson): React.JSX.El
 
 ## Bonus: cool use cases
 
-Putting JSX into reveal slides actually really, really powerful. There are more use cases this kind of integration could fill than I can think of here, but here are some notable ones that come to mind:
+Putting JSX into reveal.js slides actually really, really powerful. There are more use cases this kind of integration could fill than I can think of here, but here are some notable ones that come to mind:
 
 - Live audience reactions and polling built <i>directly into the slides they're seeing!</i>
 - Using form content on a reveal deck to make a cool registration or scheduling flow for a website
