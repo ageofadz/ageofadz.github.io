@@ -22,8 +22,6 @@ className="transition-all hover:dark:bg-neutral-700 hover:bg-neutral-200 border 
 >
 <img alt="Email" src="/email.svg" width="50" height="50" />
 
-// LINK TO SO (RootLayout)
-
 </a>
         </nav>
       </div>
