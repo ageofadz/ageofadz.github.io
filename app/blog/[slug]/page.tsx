@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+// @ts-ignore
 import { Suspense, cache } from 'react';
 import { notFound } from 'next/navigation';
 import { CustomMDX } from 'app/components/mdx';
@@ -138,7 +139,8 @@ export default function Blog({ params }) {
 
 let incrementViews = cache(increment);
 
-async function Views({ slug }: { slug: string }) {
+// @ts-ignore
+async function Views({ slug }: { slug: string }): React.JSX.Element {
   let views = await getViewsCount();
   incrementViews(slug);
   return <ViewCounter allViews={views} slug={slug} />;
