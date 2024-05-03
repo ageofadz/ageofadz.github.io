@@ -1,4 +1,4 @@
-import './global.css';
+import './style.css';
 import type { Metadata } from 'next';
 import { Sono } from 'next/font/google'
 import { Roboto } from 'next/font/google'
