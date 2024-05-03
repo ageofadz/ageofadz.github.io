@@ -32,16 +32,18 @@ export default function BlogPage() {
             className="flex flex-col space-y-1 mb-4"
             href={`/blog/${post.slug}`}
           >
-            <div className="w-full flex flex-col">
-              <div className="flex flex-row">
-              <p className="text-neutral-900 dark:text-neutral-100 tracking-tight">
+            <div className="w-full flex flex-row my-3">
+              <div className="flex flex-row w-full">
+              <p className="text-neutral-900 dark:text-neutral-100 tracking-tight float-left">
                 {post.metadata.title}
               </p>
-              <img src={post.metadata.image} className='rounded-full w-20 h-20' />
               </div>
+              <div className="w-full flex justify-end">
               <Suspense fallback={<p className="h-6" />}>
                 <Views slug={post.slug} />
               </Suspense>
+              <img src={post.metadata.image} className='rounded-full w-12 h-12 float-right' />
+              </div>
             </div>
           </Link>
         ))}

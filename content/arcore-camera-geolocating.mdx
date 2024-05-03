@@ -1,0 +1,127 @@
+---
+title: "Precise visual geopositioning using ARCore"
+publishedAt: "2024-05-03"
+summary: "How grifgraf gets your location without using your GPS"
+image: "/arcore-camera-geolocating/locating.png"
+
+---
+
+## Summary
+
+In a [previous blog post](https://www.samrobertson.dev/blog/arkit-vincenty-geolocating), I talked about how [grifgraf](http://grifgraf.app) converts lat/lon coordinate pairs to local coordinates relative to the phone camera and vice-versa. This requires grifgraf to know the user's precise lat/lon location as a point of truth.
+
+This is accomplished by taking in camera data and sending it to [ARCore's Geospatial API](https://developers.google.com/ar/develop/geospatial), prompting the user to maximize the camera input's usefulness by pointing their device toward nearby buildings and moving the camera slowly.
+
+Once a result with a sufficiently high amount of confidence comes back, its taken as a point of truth, and the calculations for placing grafs in the users area begins.
+
+## Why not use GPS?
+<p>
+
+
+At first glance there's really obvious solution - simply request the users GPS location in the app, and access the latitude and longitude values. `CLLocationManagerDelegate` accomplishes this with `didUpdateLocations`, returning an array of locations collected by the GPS.
+
+The problem is, even on really nice mobile phones, GPS is far from precise enough for grifgraf's primary use case. The lowest I've been able to get `CLLocationAccuracy` to go was a little over two meters, and that was outdoors in a field in Chicago. What if you're between buildings, or somewhere with less cellular infrastructure?
+
+<div className="outline-double p-4 m-4 w-56 float-right">
+<i><img src="/arcore-camera-geolocating/monkey.png" className='w-full' />
+<tr className="max-w-3 text-wrap overflow-hidden">The user's location is a point of truth in both posting and retrieving this graf's location.</tr>
+</i>
+</div>
+
+Take this picture of a monkey I posted during a trip to the southern coast of Vietnam. Its coordinates are as follows:
+```
+10.65733638126917, 107.7736102388167
+```
+
+This is denoted in [decimal degrees](https://en.wikipedia.org/wiki/Decimal_degrees). There are 13 decimal points on this coordinate pair, meaning that the location is aimed within a small fraction of a millimeter.
+
+If the margin of error for this coordinate pair is even a single millionth of a degree, it will mean a displacement of up to over a meter.
+Depending on the direction of this displacement, it could end up floating in the alleyway, on the sidewalk nearby, or even pushed back behind the wall appearing inside the building.
+
+Clearly GPS isn't good enough.
+
+## Getting location from VPS
+
+When taking responses from Google's VPS, a variety of accuracy scores come back - the app uses heading and verticalaccuracy, but because the phones altimeter and compass are quite accurate, the `horizontalaccuracy` is by far the most important since it represents a radius of error.
+
+```
+struct VPSPayload {
+    let isVpsAvailable: Bool;
+    let transform: VPSTransform?;
+}
+
+struct VPSTransform {
+    let coord: CLLocationCoordinate2D;
+    let heading: Double;
+    let horizontalAccuracy: Double;
+    let verticalAccuracy: Double;
+    let headingAccuracy: Double;
+}
+```
+
+<div className="outline-double p-4 m-4 w-3/4">
+<i><p ><img src="/arcore-camera-geolocating/movephoneprompt.png" className='w-full' /></p>
+<tr className="max-w-3 text-wrap overflow-hidden">With some guidance, the user can show the VPS API enough of their surroundings that it can tell where they are with surprising precision.</tr>
+</i>
+</div>
+
+
+## Checking VPS location and accuracy
+
+Until the user's location is found, the user is prompted to look at nearby buildings, and a `VPSPayload` is retrieved every few frames like so.
+
+```
+let gFrame = try? garSession?.update(frame)
+if var e = gFrame?.earth {
+    if let geoSpatialTransform = e.cameraGeospatialTransform {
+        vpsPayload = VPSPayload(isVpsAvailable: true, transform: VPSTransform(coord: geoSpatialTransform.coordinate, heading: geoSpatialTransform.heading, horizontalAccuracy: geoSpatialTransform.horizontalAccuracy, verticalAccuracy: geoSpatialTransform.verticalAccuracy, headingAccuracy: geoSpatialTransform.headingAccuracy))
+    }
+}
+```
+
+Every retrieval of the VPS payload is tested against a threshhold - currently 0.04 meters. The closer it reaches to the threshold, the higher a progress bar on the coaching screen reaches completion, which can be seen in the image above.
+
+
+```
+if horizontalAccuracy > vpsThreshhold {
+    vm.viewType = .geo
+    vm.progress = 1/((accuracy - vpsThreshhold) + 1)
+    return
+} else {
+    userAlt = locationManagerLocation.ellipsoidalAltitude
+    userCoords = coord
+
+    // Select a graf to save by default
+    if (graf==nil) {
+        DispatchQueue.main.async {
+            self.setFirstGraf()
+        }
+    }
+
+    // Pull grafs from server
+    if (vm.viewType == .geo) {
+        NotificationCenter.default.post(name: notificationNames.getGrafEnts, object: nil)
+    }
+}
+```
+
+When the threshhold is met, grafs are pulled from the server and positioned using the `userCoords` value, ending the geopositioning phase in the app.
+
+<div className="outline-double p-4 m-4 w-3/4">
+<i><p ><img src="/arcore-camera-geolocating/radius.png" className='w-full' /></p>
+<tr className="max-w-3 text-wrap overflow-hidden">The outer circle is a margin of error of a single meter - the inner circle is grifgraf's margin of error of 0.04 meters.</tr>
+</i>
+</div>
+
+
+## Downsides/further improvements
+
+Relying on an external API for such a core grifgraf feature will always be annoying, but for the scale grifgraf is at now, and the generous free tier Google's AR services have, this is working out well.
+
+The largest area of improvement is the amount of time it takes for a user to get a precise VPS match, especially in areas with few landmarks. Without an active ARSession, their location can't be saved, so upon re-opening the app, it has to start over. 
+
+The ideal for any AR app should be that users don't have to "help" the AR engine with anything. This implementation requires users to move through a coaching screen until the progress bar is full.
+
+In the future, the relatively imprecise, but easy and quick, GPS location data can instead be used to approximate user area, and the camera only checks nearby walls by matching their appearance to known walls in the area. This provides for a better user experience, and gives grifgraf more use information about wall type and texture, but may be less reliable and require more training data from users.
+
+</p>
