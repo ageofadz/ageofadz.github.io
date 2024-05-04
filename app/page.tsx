@@ -1,11 +1,12 @@
 
+import Image from "next/image";
 
 export default function Page() {
   return (
     <section>
       <div className='flex flex-row justify-between'>
       <h1 className="font-medium text-2xl mb-8 tracking-tighter">Sam Robertson</h1>
-      <img src='./portrait.png' className='rounded-full w-20 h-20 justify-right' />
+      <Image width={800} height={800}src='/portrait.png' className='rounded-full w-20 h-20 justify-right' alt='portrait' />
       </div>
       <p className="prose prose-neutral dark:prose-invert">
         I am a developer and ESL teacher from Chicago living in Hồ Chí Minh City, Vietnam. I am the creator of <a href='https://grifgraf.app'>grifgraf</a> and <a href='https://planmi.vercel.app'>planmi</a>.

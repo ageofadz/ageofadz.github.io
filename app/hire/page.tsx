@@ -1,6 +1,4 @@
-import { auth } from 'app/auth';
-import { getGuestbookEntries } from 'app/db/queries';
-import { SignIn, SignOut } from './buttons';
+import Image from "next/image";
 
 export const metadata = {
   title: 'Hire me',
@@ -12,7 +10,7 @@ export default function GuestbookPage() {
     <section>
     <div className='flex flex-row justify-between'>
     <h1 className="font-medium text-2xl mb-8 tracking-tighter">Why Sam?</h1>
-    <img src='./portrait.png' className='rounded-full w-20 h-20 justify-right' />
+    <Image width={800} height={800}src='/portrait.png' alt='' className='rounded-full w-20 h-20 justify-right' />
     </div>
 
       <ul className='my-5'>

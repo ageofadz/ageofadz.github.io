@@ -1,17 +1,17 @@
 import type { Metadata } from 'next';
-// @ts-ignore
 import { Suspense, cache } from 'react';
 import { notFound } from 'next/navigation';
-import { CustomMDX } from 'app/components/mdx';
-import { getViewsCount } from 'app/db/queries';
-import { getBlogPosts } from 'app/db/blog';
+import { CustomMDX } from '../../components/mdx';
+import { getViewsCount } from '../../db/queries';
+import { getBlogPosts } from '../../db/blog';
 import ViewCounter from '../view-counter';
-import { increment } from 'app/db/actions';
+import { increment } from '../../db/actions';
 import { unstable_noStore as noStore } from 'next/cache';
+import Image from "next/image";
 
 export async function generateMetadata({
   params,
-}): Promise<Metadata | undefined> {
+}: any): Promise<Metadata | undefined> {
   let post = getBlogPosts().find((post) => post.slug === params.slug);
   if (!post) {
     return;
@@ -84,7 +84,7 @@ function formatDate(date: string) {
   return `${fullDate} (${formattedDate})`;
 }
 
-export default function Blog({ params }) {
+export default function Blog({ params }: any) {
   let post = getBlogPosts().find((post) => post.slug === params.slug);
 
   if (!post) {
@@ -118,7 +118,7 @@ export default function Blog({ params }) {
       <h1 className="title font-medium text-2xl tracking-tighter max-w-[650px]">
         {post.metadata.title}
       </h1>
-      <img src={post.metadata.image} className='rounded-full w-20 h-20' />
+      <Image alt='' width={800} height={800} src={post.metadata.image ?? ''} className='rounded-full w-20 h-20' />
       </div>
       <div className="flex justify-between items-center mt-2 mb-8 text-sm max-w-[650px]">
         <Suspense fallback={<p className="h-5" />}>
@@ -139,8 +139,7 @@ export default function Blog({ params }) {
 
 let incrementViews = cache(increment);
 
-// @ts-ignore
-async function Views({ slug }: { slug: string }): React.JSX.Element {
+async function Views({ slug }: { slug: string }): Promise<React.JSX.Element> {
   let views = await getViewsCount();
   incrementViews(slug);
   return <ViewCounter allViews={views} slug={slug} />;

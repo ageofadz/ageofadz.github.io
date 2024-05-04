@@ -1,7 +1,5 @@
 import { getTweet } from 'react-tweet/api';
-import { Suspense } from 'react';
 import {
-  TweetSkeleton,
   EmbeddedTweet,
   TweetNotFound,
   type TweetProps,

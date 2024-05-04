@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { Suspense } from 'react';
 import ViewCounter from './view-counter';
-import { getViewsCount } from 'app/db/queries';
-import { getBlogPosts } from 'app/db/blog';
+import { getViewsCount } from '../db/queries';
+import { getBlogPosts } from '../db/blog';
+import Image from "next/image";
 
 export const metadata = {
   title: 'Blog',
@@ -42,7 +43,7 @@ export default function BlogPage() {
               <Suspense fallback={<p className="h-6" />}>
                 <Views slug={post.slug} />
               </Suspense>
-              <img src={post.metadata.image} className='rounded-full w-12 h-12 float-right' />
+              <Image width={800} height={800}src={post.metadata.image ?? ''} className='rounded-full w-12 h-12 float-right' alt={post.metadata.image ?? ''} />
               </div>
             </div>
           </Link>

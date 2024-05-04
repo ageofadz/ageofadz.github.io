@@ -1,0 +1,1 @@
+declare module '@geist-ui/react/esm/card';
