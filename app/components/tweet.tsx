@@ -26,7 +26,7 @@ const TweetContent = async ({ id, components, onError }: TweetProps) => {
 
   return <EmbeddedTweet tweet={tweet} components={components} />;
 };
-
+// @ts-ignore
 export const ReactTweet = (props: TweetProps) => <TweetContent {...props} />;
 
 export async function TweetComponent({ id }: { id: string }) {

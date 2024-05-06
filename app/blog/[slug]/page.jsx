@@ -1,4 +1,3 @@
-import type { Metadata } from 'next';
 import { Suspense, cache } from 'react';
 import { notFound } from 'next/navigation';
 import { CustomMDX } from '../../components/mdx';
@@ -11,7 +10,7 @@ import Image from "next/image";
 
 export async function generateMetadata({
   params,
-}: any): Promise<Metadata | undefined> {
+}){
   let post = getBlogPosts().find((post) => post.slug === params.slug);
   if (!post) {
     return;
@@ -51,7 +50,7 @@ export async function generateMetadata({
   };
 }
 
-function formatDate(date: string) {
+function formatDate(date) {
   noStore();
   let currentDate = new Date();
   if (!date.includes('T')) {
@@ -84,13 +83,13 @@ function formatDate(date: string) {
   return `${fullDate} (${formattedDate})`;
 }
 
-export default function Blog({ params }: any) {
+export default function Blog({ params }) {
   let post = getBlogPosts().find((post) => post.slug === params.slug);
 
   if (!post) {
     notFound();
   }
-
+// @ts-ignore
   return (
     <section>
       <script
@@ -138,8 +137,7 @@ export default function Blog({ params }: any) {
 }
 
 let incrementViews = cache(increment);
-
-async function Views({ slug }: { slug: string }): Promise<React.JSX.Element> {
+async function Views({ slug }) {
   let views = await getViewsCount();
   incrementViews(slug);
   return <ViewCounter allViews={views} slug={slug} />;

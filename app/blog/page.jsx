@@ -52,7 +52,7 @@ export default function BlogPage() {
   );
 }
 
-async function Views({ slug }: { slug: string }) {
+async function Views({ slug }) {
   let views = await getViewsCount();
 
   return <ViewCounter allViews={views} slug={slug} />;
