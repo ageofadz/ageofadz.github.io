@@ -13,6 +13,7 @@
     "@geist-ui/core": "^2.3.8",
     "@geist-ui/react": "^2.2.5",
     "@googleapis/youtube": "^15.1.0",
+    "crypto": "^1.0.1",
     "next": "14.2.3",
     "next-auth": "^4.24.7",
     "next-mdx-remote": "^4.4.1",
