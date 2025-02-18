@@ -80,11 +80,12 @@ const bounceOffEdges = (x: number, y: number, dx: number, dy: number, width: num
   return { newDx, newDy };
 };
 
+
 export default function Home() {
   const [hoveredColor, setHoveredColor] = useState(defaultWatermarkColor);
   // New state for the white container background:
   const [bgColor, setBgColor] = useState("#ffffff");
-  const [shapes, setShapes] = useState(generateShapes(10));
+  const [shapes, setShapes] = useState([] as any);
   const [isDragging, setIsDragging] = useState(false);
   const [cards, setCards] = useState([
     { id: 1, x: 50, y: 150, width: 350, height: 200, rotation: 0, title: 'grifgraf', desc: 'AR street art platform' },
@@ -96,9 +97,23 @@ export default function Home() {
   ]);
   const [activeCard, setActiveCard] = useState(null as any | null);
 
+  const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    };
+    handleResize(); // Get initial size
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    setShapes(generateShapes(10));
+  }, []);
+
   useEffect(() => {
     const interval = setInterval(() => {
-      setShapes((prevShapes) =>
+      setShapes((prevShapes: any[]) =>
         prevShapes.map((shape) => {
           if (shape.isFlying) {
             let newX = shape.x + shape.dx * 2;
@@ -152,13 +167,13 @@ export default function Home() {
         className="absolute p-6 cursor-grab text-black"
         style={{ width: 'full', height: 200 }}
         drag
-        dragConstraints={{ top: 0, left: 0, right: window.innerWidth - 600, bottom: window.innerHeight - 200 }}
+        dragConstraints={{ top: 0, left: 0, right: windowSize.width - 600, bottom: windowSize.height - 200 }}
         dragElastic={0.2}
       >
         <h1 className={`text-9xl font-bold`}>sam robertson</h1>
       </motion.div>
 
-      {shapes.map((shape, i) => (
+      {shapes.map((shape: any, i: number) => (
   <motion.div
     key={shape.id}
     className={`absolute ${shape.color} opacity-80 shadow-xl cursor-grab ${shape.font}`}
@@ -173,7 +188,7 @@ export default function Home() {
     onHoverStart={() => setHoveredColor(shape.hex)}
     onHoverEnd={() => setHoveredColor(defaultWatermarkColor)}
     onDragStart={() => {
-      setShapes((prevShapes) =>
+      setShapes((prevShapes: any[]) =>
         prevShapes.map((s) => (s.id === shape.id ? { ...s, dx: 0, dy: 0 } : s))
       );
     }}
@@ -181,8 +196,8 @@ export default function Home() {
       if (shape.hex === '#ffffff') {
         // If the shape is already white, revert it and set container bg to white.
         setBgColor('#ffffff');
-        setShapes((prevShapes) =>
-          prevShapes.map((s) =>
+        setShapes((prevShapes: any) =>
+          prevShapes.map((s: any) =>
             s.id === shape.id
               ? { ...s, color: s.originalColor, hex: s.originalHex }
               : s
@@ -191,8 +206,8 @@ export default function Home() {
       } else {
         // Set container background to the shape's color and change this shape to white.
         setBgColor(shape.hex);
-        setShapes((prevShapes) =>
-          prevShapes.map((s) => {
+        setShapes((prevShapes: any) =>
+          prevShapes.map((s: any) => {
             if (s.id === shape.id) {
               return { ...s, color: 'bg-white', hex: '#ffffff' };
             } else if (s.color === 'bg-white') {
@@ -206,7 +221,7 @@ export default function Home() {
     }}
     drag
     onDragEnd={(_: number, info: any) => {
-      setShapes((prevShapes) =>
+      setShapes((prevShapes: any[]) =>
         prevShapes.map((s) =>
           s.id === shape.id
             ? { ...s, dx: info.velocity.x / 100, dy: info.velocity.y / 100, isFlying: true }
@@ -227,8 +242,8 @@ export default function Home() {
           dragConstraints={{ 
             top: 0, 
             left: 0, 
-            right: window.innerWidth - card.width, 
-            bottom: window.innerHeight - card.height 
+            right: windowSize.width - card.width, 
+            bottom: windowSize.height - card.height 
           }}
           dragElastic={0.2}
           onDragStart={() => setIsDragging(true)}
