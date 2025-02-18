@@ -167,8 +167,10 @@ let components = {
 };
 
 export function CustomMDX(props: any) {
+  const MDXRemoteComponent = MDXRemote as unknown as React.ComponentType<any>;
+
   return (
-    <MDXRemote
+    <MDXRemoteComponent
       {...props}
       components={{ ...components, ...(props.components || {}) }}
     />
