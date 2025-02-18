@@ -300,14 +300,16 @@ export default function Home() {
           setIsDragging(false);
           // Your current position update code goes here
         }}
-        onDrag={(info: any) => {
-          const newWidth = Math.max(100, card.width + info.delta.x);
-          const newHeight = Math.max(100, card.height + info.delta.y);
-          setCards((prevCards) =>
-            prevCards.map((c) =>
-              c.id === card.id ? { ...c, width: newWidth, height: newHeight } : c
-            )
-          );
+        onDrag={(_: any, info: any) => {
+          if (info.delta) {
+            const newWidth = Math.max(100, card.width + info.delta.x);
+            const newHeight = Math.max(100, card.height + info.delta.y);
+            setCards((prevCards) =>
+              prevCards.map((c) =>
+                c.id === card.id ? { ...c, width: newWidth, height: newHeight } : c
+              )
+            );
+          }
         }}
       >  
   </motion.div>
