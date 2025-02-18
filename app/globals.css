@@ -9,6 +9,13 @@
   color: #fefefe;
 }
 
+.font-michroma {
+  font-family: var(--font-michroma), sans-serif;
+}
+.font-roboto {
+  font-family: var(--font-sans), sans-serif;
+}
+
 :root {
   --sh-class: #2d5e9d;
   --sh-identifier: #354150;

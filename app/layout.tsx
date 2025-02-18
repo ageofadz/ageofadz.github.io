@@ -2,6 +2,7 @@ import './globals.css';
 import type { Metadata } from 'next';
 import { Sono } from 'next/font/google'
 import { Roboto } from 'next/font/google'
+import { Lexend } from 'next/font/google'
 
 import { Navbar } from './components/nav';
 import { SandpackCSS } from './blog/[slug]/sandpack';
@@ -11,6 +12,12 @@ const sono = Sono({
   subsets: ['latin', 'vietnamese'],
   display: 'swap',
   variable: '--font-mono',
+})
+const michrono = Lexend({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-michroma',
+  weight: '400',
 })
 const roboto = Roboto({
   subsets: ['latin', 'vietnamese'],
@@ -65,22 +72,17 @@ export default function RootLayout({
     <html
       lang="en"
       className={cx(
-        'text-black bg-white dark:text-white dark:bg-[#111010]',
+        'text-black bg-white dark:text-white',
         roboto.variable,
-        sono.variable
+        sono.variable,
+        michrono.variable
       )}
     >
       <head>
         <SandpackCSS />
       </head>
-      <body className="antialiased max-w-4xl mb-40 flex flex-row md:flex-row mx-4 mt-8 lg:mx-auto">
-        <main className="flex-auto min-w-0 mt-6 flex flex-row px-2 md:px-0">
-          <Navbar />
-          <div className='w-4/5 mx-8'>
+      <body>   
           {children}
-          </div>
-          <Links />
-        </main>
       </body>
     </html>
   );

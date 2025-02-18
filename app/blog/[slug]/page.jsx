@@ -91,7 +91,7 @@ export default function Blog({ params }) {
   }
 // @ts-ignore
   return (
-    <section>
+    <section  className=" bg-white text-black">
       <script
         type="application/ld+json"
         suppressHydrationWarning

@@ -14,7 +14,7 @@ export default function BlogPage() {
   let allBlogs = getBlogPosts();
 
   return (
-    <section>
+    <section className=" bg-white text-black">
       <h1 className="font-medium text-2xl mb-8 tracking-tighter">
         Latest posts
       </h1>
@@ -33,9 +33,9 @@ export default function BlogPage() {
             className="flex flex-col space-y-1 mb-4"
             href={`/blog/${post.slug}`}
           >
-            <div className="w-full flex flex-row my-3">
+            <div className="w-full flex flex-row my-3 bg-white">
               <div className="flex flex-row w-full">
-              <p className="text-neutral-900 dark:text-neutral-100 tracking-tight float-left">
+              <p className="text-neutral-900 tracking-tight float-left">
                 {post.metadata.title}
               </p>
               </div>
