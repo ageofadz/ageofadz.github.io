@@ -39,17 +39,18 @@ const extractPolygon = (svgString: string): string | null => {
 const defaultWatermarkColor = "#000000"; // default fill when not hovering
 
 // Add originalColor and originalHex to each shape.
-const generateShapes = (count: number) => {
+const generateShapes = (count: number, isMobile: boolean = false) => {
+  const scale = isMobile ? 0.3 : 1; // Scale down shapes on mobile
   return Array.from({ length: count }, (_, i) => {
     const color = shapePalette[i % shapePalette.length];
     const hex = shapeHexes[i % shapeHexes.length];
     return {
       id: i,
-      x: Math.random() * window.innerWidth,
-      y: Math.random() * window.innerHeight,
-      dx: (Math.random() - 0.5) * 4,
-      dy: (Math.random() - 0.5) * 4,
-      size: Math.random() * 150 + 50,
+      x: Math.random() * (isMobile ? window.innerWidth * 0.8 : window.innerWidth),
+      y: Math.random() * (isMobile ? window.innerHeight * 0.8 : window.innerHeight),
+      dx: (Math.random() - 0.5) * 4 * scale,
+      dy: (Math.random() - 0.5) * 4 * scale,
+      size: (Math.random() * 150 + 50) * scale,
       rotation: Math.random() * 360,
       isFlying: false,
       color,
@@ -72,14 +73,35 @@ const variantPaths = [
   "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)" // square
 ];
 
-const bounceOffEdges = (x: number, y: number, dx: number, dy: number, width: number, height: number) => {
+const bounceOffEdges = (x: number, y: number, dx: number, dy: number, width: number, height: number, isMobile: boolean = false) => {
+  const maxWidth = isMobile ? window.innerWidth * 0.8 : window.innerWidth;
+  const maxHeight = isMobile ? window.innerHeight * 0.8 : window.innerHeight;
   let newDx = dx;
   let newDy = dy;
-  if (x <= 0 || x + width >= window.innerWidth) newDx *= -1;
-  if (y <= 0 || y + height >= window.innerHeight) newDy *= -1;
+  if (x <= 0 || x + width >= maxWidth) newDx *= -1;
+  if (y <= 0 || y + height >= maxHeight) newDy *= -1;
   return { newDx, newDy };
 };
 
+// Generate mobile-friendly card positions
+const generateMobileCards = () => [
+  { id: 1, x: 20, y: 200, width: 280, height: 120, rotation: 0, title: 'grifgraf', desc: 'AR street art platform' },
+  { id: 2, x: 20, y: 340, width: 280, height: 120, rotation: 0, title: 'accountabl', desc: 'easy peer-powered budgeting' },
+  { id: 3, x: 20, y: 480, width: 280, height: 120, rotation: 0, title: 'planmi', desc: 'plan and execute language lessons' },
+  { id: 4, x: 20, y: 620, width: 280, height: 120, rotation: 0, title: 'Blog', desc: '' },
+  { id: 5, x: 20, y: 760, width: 280, height: 200, rotation: 0, title: 'Socials', desc: 'connect with me' },
+  { id: 6, x: 20, y: 980, width: 280, height: 120, rotation: 0, title: 'About me', desc: '' },
+];
+
+// Desktop card positions (original)
+const generateDesktopCards = () => [
+  { id: 1, x: 50, y: 150, width: 350, height: 200, rotation: 0, title: 'grifgraf', desc: 'AR street art platform' },
+  { id: 2, x: 200, y: 330, width: 400, height: 200, rotation: 0, title: 'accountabl', desc: 'easy peer-powered budgeting' },
+  { id: 3, x: 100, y: 510, width: 300, height: 200, rotation: 0, title: 'planmi', desc: 'plan and execute language lessons' },
+  { id: 4, x: 800, y: 200, width: 300, height: 200, rotation: 0, title: 'Blog', desc: '' },
+  { id: 5, x: 1200, y: 150, width: 400, height: 600, rotation: 0, title: 'Socials', desc: 'connect with me' },
+  { id: 6, x: 900, y: 700, width: 400, height: 200, rotation: 0, title: 'About me', desc: '' },
+];
 
 export default function Home() {
   const [hoveredColor, setHoveredColor] = useState(defaultWatermarkColor);
@@ -87,28 +109,31 @@ export default function Home() {
   const [bgColor, setBgColor] = useState("#ffffff");
   const [shapes, setShapes] = useState([] as any);
   const [isDragging, setIsDragging] = useState(false);
-  const [cards, setCards] = useState([
-    { id: 1, x: 50, y: 150, width: 350, height: 200, rotation: 0, title: 'grifgraf', desc: 'AR street art platform' },
-    { id: 2, x: 200, y: 330, width: 400, height: 200, rotation: 0, title: 'accountabl', desc: 'easy peer-powered budgeting' },
-    { id: 3, x: 100, y: 510, width: 300, height: 200, rotation: 0, title: 'planmi', desc: 'plan and execute language lessons' },
-    { id: 4, x: 800, y: 200, width: 300, height: 200, rotation: 0, title: 'Blog', desc: '' },
-    { id: 5, x: 1200, y: 150, width: 400, height: 600, rotation: 0, title: 'Socials', desc: 'connect with me' },
-    { id: 6, x: 900, y: 700, width: 400, height: 200, rotation: 0, title: 'About me', desc: '' },
-  ]);
+  const [isMobile, setIsMobile] = useState(false);
+  const [cards, setCards] = useState(generateDesktopCards());
   const [activeCard, setActiveCard] = useState(null as any | null);
 
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
+  
   useEffect(() => {
     const handleResize = () => {
-      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+      const newWidth = window.innerWidth;
+      const newHeight = window.innerHeight;
+      const mobile = newWidth < 768; // Mobile breakpoint
+      
+      setWindowSize({ width: newWidth, height: newHeight });
+      setIsMobile(mobile);
+      
+      // Regenerate cards based on screen size
+      setCards(mobile ? generateMobileCards() : generateDesktopCards());
+      
+      // Regenerate shapes with mobile scaling
+      setShapes(generateShapes(10, mobile));
     };
+    
     handleResize(); // Get initial size
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  useEffect(() => {
-    setShapes(generateShapes(10));
   }, []);
 
   useEffect(() => {
@@ -118,7 +143,7 @@ export default function Home() {
           if (shape.isFlying) {
             let newX = shape.x + shape.dx * 2;
             let newY = shape.y + shape.dy * 2;
-            let { newDx, newDy } = bounceOffEdges(newX, newY, shape.dx, shape.dy, shape.size, shape.size);
+            let { newDx, newDy } = bounceOffEdges(newX, newY, shape.dx, shape.dy, shape.size, shape.size, isMobile);
             let newFont = shape.font === 'font-bold uppercase tracking-wide'
               ? 'font-mono lowercase tracking-tight'
               : 'font-bold uppercase tracking-wide';
@@ -134,14 +159,14 @@ export default function Home() {
           } else {
             let newX = shape.x + shape.dx;
             let newY = shape.y + shape.dy;
-            let { newDx, newDy } = bounceOffEdges(newX, newY, shape.dx, shape.dy, shape.size, shape.size);
+            let { newDx, newDy } = bounceOffEdges(newX, newY, shape.dx, shape.dy, shape.size, shape.size, isMobile);
             return { ...shape, x: newX, y: newY, dx: newDx, dy: newDy, rotation: shape.rotation + 2 };
           }
         })
       );
     }, 30);
     return () => clearInterval(interval);
-  }, []);
+  }, [isMobile]);
 
   return (
     <div
@@ -163,14 +188,19 @@ export default function Home() {
       {/* Bouncing and Draggable Content */}
       <motion.div
         contentEditable
-        animate={{ x: 300, y: 0 }}
+        animate={{ x: isMobile ? 20 : 300, y: 0 }}
         className="absolute p-6 cursor-grab text-black"
-        style={{ width: 'full', height: 200 }}
+        style={{ width: 'full', height: isMobile ? 100 : 200 }}
         drag
-        dragConstraints={{ top: 0, left: 0, right: windowSize.width - 600, bottom: windowSize.height - 200 }}
+        dragConstraints={{ 
+          top: 0, 
+          left: 0, 
+          right: isMobile ? windowSize.width - 200 : windowSize.width - 600, 
+          bottom: windowSize.height - (isMobile ? 100 : 200) 
+        }}
         dragElastic={0.2}
       >
-        <h1 className={`text-9xl font-bold`}>sam robertson</h1>
+        <h1 className={`${isMobile ? 'text-4xl' : 'text-9xl'} font-bold`}>sam robertson</h1>
       </motion.div>
 
       {shapes.map((shape: any, i: number) => (
@@ -258,43 +288,43 @@ export default function Home() {
             }
           }}
         >
-          <h2 className="text-4xl font-bold">{card.title}</h2>
-          <p className="mt-2">{card.desc}</p>
+          <h2 className={`${isMobile ? 'text-xl' : 'text-4xl'} font-bold`}>{card.title}</h2>
+          <p className={`mt-2 ${isMobile ? 'text-sm' : ''}`}>{card.desc}</p>
           {card.id === 5 && <>
 
-      <div className="grid grid-cols-2 gap-4 overflow-hidden">
+      <div className={`grid ${isMobile ? 'grid-cols-3' : 'grid-cols-2'} gap-4 overflow-hidden`}>
           <a href='https://www.github.com/ageofadz'
           className="transition-all  hover:bg-neutral-200 border border-neutral-200  bg-neutral-50 rounded p-1 text-sm inline-flex items-left  text-neutral-900 dark:text-neutral-100 mb-3"
           >
-          <img className='m-auto' width={120} height={120} alt="GitHub logo" src="/github-logo.svg"/>
+          <img className='m-auto' width={isMobile ? 60 : 120} height={isMobile ? 60 : 120} alt="GitHub logo" src="/github-logo.svg"/>
           </a>
           <a href='https://www.linkedin.com/in/sam-r-559bb090/'
           className="transition-all  hover:bg-neutral-200 border border-neutral-200 bg-neutral-50 rounded p-1 text-sm inline-flex items-left  text-neutral-900 dark:text-neutral-100 mb-3 "
           >
-          <img  className='m-auto' width={120} height={120} alt="LinkedIn logo" src="/linkedin-logo.svg" />
+          <img  className='m-auto' width={isMobile ? 60 : 120} height={isMobile ? 60 : 120} alt="LinkedIn logo" src="/linkedin-logo.svg" />
           </a>
           <a  href='mailto:samuel.lazier.robertson+website@gmail.com'
           className="transition-all  hover:bg-neutral-200 border border-neutral-200 bg-neutral-50 rounded p-1 text-sm inline-flex items-left  text-neutral-900 dark:text-neutral-100 mb-3 "
           >
-          <img  className='m-auto' width={120} height={120} alt="Email" src="/email.svg"/>
+          <img  className='m-auto' width={isMobile ? 60 : 120} height={isMobile ? 60 : 120} alt="Email" src="/email.svg"/>
           
           </a>
           <a  href='https://www.instagram.com/sam.l.robertson/'
           className="transition-all  hover:bg-neutral-200 border border-neutral-200 bg-neutral-50 rounded p-1 text-sm inline-flex items-left  text-neutral-900 dark:text-neutral-100 mb-3 "
           >
-          <img  className='m-auto' width={120} height={120} alt="Instagram" src="/insta-logo.svg"/>
+          <img  className='m-auto' width={isMobile ? 60 : 120} height={isMobile ? 60 : 120} alt="Instagram" src="/insta-logo.svg"/>
           
           </a>
           <a  href='https://www.soundcloud.com/colortelevisionmusic/'
           className="transition-all  hover:bg-neutral-200 border border-neutral-200 bg-neutral-50 rounded p-1 text-sm inline-flex items-left  text-neutral-900 dark:text-neutral-100 mb-3 "
           >
-          <img  className='m-auto' width={120} height={120} alt="Soundcloud" src="/soundcloud.svg"/>
+          <img  className='m-auto' width={isMobile ? 60 : 120} height={isMobile ? 60 : 120} alt="Soundcloud" src="/soundcloud.svg"/>
           
           </a>
           <a  href='https://huggingface.co/samrobertsondev'
           className="transition-all  hover:bg-neutral-200 border border-neutral-200 bg-neutral-50 rounded p-1 text-sm inline-flex items-left  text-neutral-900 dark:text-neutral-100 mb-3 "
           >
-          <img  className='m-auto' width={120} height={120} alt="Huggingface" src="/huggingface.svg"/>
+          <img  className='m-auto' width={isMobile ? 60 : 120} height={isMobile ? 60 : 120} alt="Huggingface" src="/huggingface.svg"/>
           
           </a>
           </div>
@@ -368,7 +398,7 @@ export default function Home() {
       onClick={() => setActiveCard(null)} // Closes modal if outer area is clicked
     >
       <motion.div
-        className="bg-white p-6 rounded-lg max-w-3xl w-full relative"
+        className={`bg-white p-6 rounded-lg ${isMobile ? 'max-w-sm w-full mx-4' : 'max-w-3xl w-full'} relative`}
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.8, opacity: 0 }}
@@ -381,9 +411,9 @@ export default function Home() {
           &times;
         </button>
         <div className="mt-4">
-          <h2 className="text-3xl font-bold">{activeCard.title}</h2>
+          <h2 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold`}>{activeCard.title}</h2>
           <div className="mt-4">
-            {frame(activeCard.id)}
+            {frame(activeCard.id, isMobile)}
           </div>
         </div>
       </motion.div>
@@ -394,22 +424,25 @@ export default function Home() {
   );
 }
 
-const frame = (id: number) => {
+const frame = (id: number, isMobile: boolean = false) => {
+  const imageSize = isMobile ? 'w-24 h-24' : 'w-36 h-36';
+  const gridCols = isMobile ? 'grid-cols-2' : 'grid-cols-2';
+  
   switch(id) {
     case 1:
       return                 <>
-      <div className="grid grid-cols-2 gap-4">
+      <div className={`grid ${gridCols} gap-4`}>
         <div className="rounded-lg overflow-hidden w-48 h-48 m-auto">
-          <img src="grifgraf-full.png" alt="Grifgraf" className="w-36 object-cover m-auto" />
+          <img src="grifgraf-full.png" alt="Grifgraf" className={`${imageSize} object-cover m-auto`} />
         </div>
         <div className="rounded-lg overflow-hidden w-48 h-48 m-auto">
-          <img src="arcore-camera-geolocating/monkey.png" alt="Monkey" className="w-36 object-cover m-auto" />
+          <img src="arcore-camera-geolocating/monkey.png" alt="Monkey" className={`${imageSize} object-cover m-auto`} />
         </div>
         <div className="rounded-lg overflow-hidden w-48 h-48 m-auto">
-          <img src="arkit-vincenty-geolocating/interface.PNG" alt="Interface" className="w-36 object-cover m-auto" />
+          <img src="arkit-vincenty-geolocating/interface.PNG" alt="Interface" className={`${imageSize} object-cover m-auto`} />
         </div>
         <div className="rounded-lg overflow-hidden w-48 h-48 m-auto">
-          <img src="arkit-vincenty-geolocating/savedimage.PNG" alt="Saved Image" className="w-36 object-cover m-auto" />
+          <img src="arkit-vincenty-geolocating/savedimage.PNG" alt="Saved Image" className={`${imageSize} object-cover m-auto`} />
         </div>
       </div>
       <div className="mt-4">
@@ -422,7 +455,7 @@ const frame = (id: number) => {
     case 2:
       return <>
         <div className="rounded-lg overflow-hidden w-48 h-48 m-auto">
-          <img src="accountabl.png" alt="accountabl" className="w-36 object-cover m-auto" />
+          <img src="accountabl.png" alt="accountabl" className={`${imageSize} object-cover m-auto`} />
         </div>
       <div className="mt-4">
         <p className="normal-case">accountabl is a peer budgeting app, where you and a friend can share your transactions and check in on each others progress in meeting your financial goals.</p>
@@ -432,7 +465,7 @@ const frame = (id: number) => {
     case 3:
       return <>
         <div className="rounded-lg overflow-hidden w-48 h-48 m-auto">
-          <img src="planmi.png" alt="accountabl" className="w-36 object-cover m-auto" />
+          <img src="planmi.png" alt="accountabl" className={`${imageSize} object-cover m-auto`} />
         </div>
       <div className="mt-4">
         <p className="normal-case">I put this tool together to automate lesson planning back when I was an english teacher.</p>
@@ -444,12 +477,12 @@ const frame = (id: number) => {
     case 4:
       return <iframe
         src="/blog"
-        className="w-full h-[500px] rounded bg-white"
+        className={`w-full ${isMobile ? 'h-[300px]' : 'h-[500px]'} rounded bg-white`}
       />
       case 6:
         return <>
           <div className="rounded-lg overflow-hidden w-48 h-48 m-auto">
-            <img src="portrait.png" alt="sam" className="w-48 h-48 object-cover m-auto" />
+            <img src="portrait.png" alt="sam" className={`${isMobile ? 'w-32 h-32' : 'w-48 h-48'} object-cover m-auto`} />
           </div>
         <div className="mt-4">
           <p className="normal-case">I am a highly experienced software engineer experience currently based out of Southeast Asia. I&apos;m originally from Chicago. I like cooking, music, meditation, and architecture.</p>
