@@ -85,12 +85,12 @@ const bounceOffEdges = (x: number, y: number, dx: number, dy: number, width: num
 
 // Generate mobile-friendly card positions
 const generateMobileCards = () => [
-  { id: 1, x: 20, y: 200, width: 280, height: 120, rotation: 0, title: 'grifgraf', desc: 'AR street art platform' },
-  { id: 2, x: 20, y: 340, width: 280, height: 120, rotation: 0, title: 'accountabl', desc: 'easy peer-powered budgeting' },
-  { id: 3, x: 20, y: 480, width: 280, height: 120, rotation: 0, title: 'planmi', desc: 'plan and execute language lessons' },
-  { id: 4, x: 20, y: 620, width: 280, height: 120, rotation: 0, title: 'Blog', desc: '' },
-  { id: 5, x: 20, y: 760, width: 280, height: 200, rotation: 0, title: 'Socials', desc: 'connect with me' },
-  { id: 6, x: 20, y: 980, width: 280, height: 120, rotation: 0, title: 'About me', desc: '' },
+  { id: 1, x: 0, y: 120, width: 280, height: 120, rotation: 0, title: 'grifgraf', desc: 'AR street art platform' },
+  { id: 2, x: 60, y: 200, width: 280, height: 120, rotation: 0, title: 'accountabl', desc: 'easy peer-powered budgeting' },
+  { id: 3, x: 0, y: 320, width: 280, height: 120, rotation: 0, title: 'planmi', desc: 'plan and execute language lessons' },
+  { id: 4, x: 40, y: 400, width: 280, height: 120, rotation: 0, title: 'Blog', desc: '' },
+  { id: 5, x: 0, y: 480, width: 280, height: 200, rotation: 0, title: 'Socials', desc: 'connect with me' },
+  { id: 6, x: 60, y: 600, width: 280, height: 120, rotation: 0, title: 'About me', desc: '' },
 ];
 
 // Desktop card positions (original)
