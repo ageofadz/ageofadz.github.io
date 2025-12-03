@@ -1,6 +1,7 @@
 'use client'
 import { AnimatePresence, motion } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 // Define color palettes (Tailwind classes) and corresponding hex codes
 const shapePalette = [
@@ -46,8 +47,8 @@ const generateShapes = (count: number, isMobile: boolean = false) => {
     const hex = shapeHexes[i % shapeHexes.length];
     return {
       id: i,
-      x: Math.random() * (isMobile ? window.innerWidth * 0.8 : window.innerWidth),
-      y: Math.random() * (isMobile ? window.innerHeight * 0.8 : window.innerHeight),
+      x: Math.random() * (window.innerWidth - 100), // Ensure they start on screen
+      y: Math.random() * (window.innerHeight - 100),
       dx: (Math.random() - 0.5) * 4 * scale,
       dy: (Math.random() - 0.5) * 4 * scale,
       size: (Math.random() * 150 + 50) * scale,
@@ -74,8 +75,8 @@ const variantPaths = [
 ];
 
 const bounceOffEdges = (x: number, y: number, dx: number, dy: number, width: number, height: number, isMobile: boolean = false) => {
-  const maxWidth = isMobile ? window.innerWidth * 0.8 : window.innerWidth;
-  const maxHeight = isMobile ? window.innerHeight * 0.8 : window.innerHeight;
+  const maxWidth = window.innerWidth;
+  const maxHeight = window.innerHeight;
   let newDx = dx;
   let newDy = dy;
   if (x <= 0 || x + width >= maxWidth) newDx *= -1;
@@ -84,24 +85,50 @@ const bounceOffEdges = (x: number, y: number, dx: number, dy: number, width: num
 };
 
 // Generate mobile-friendly card positions
-const generateMobileCards = () => [
-  { id: 1, x: 0, y: 120, width: 280, height: 120, rotation: 0, title: 'grifgraf', desc: 'AR street art platform' },
-  { id: 2, x: 60, y: 200, width: 280, height: 120, rotation: 0, title: 'accountabl', desc: 'easy peer-powered budgeting' },
-  { id: 3, x: 0, y: 320, width: 280, height: 120, rotation: 0, title: 'planmi', desc: 'plan and execute language lessons' },
-  { id: 4, x: 40, y: 400, width: 280, height: 120, rotation: 0, title: 'Blog', desc: '' },
-  { id: 5, x: 0, y: 480, width: 280, height: 280, rotation: 0, title: 'Socials', desc: 'connect with me' },
-  { id: 6, x: 60, y: 600, width: 280, height: 120, rotation: 0, title: 'About me', desc: '' },
+const generateMobileCards = (windowWidth: number) => {
+  const cardWidth = Math.min(280, windowWidth - 60); // Ensure card fits with some margin
+  return [
+  { id: 1, x: 20, y: 120, width: cardWidth, height: 120, rotation: 0, title: 'grifgraf', desc: 'AR street art platform' },
+  { id: 2, x: 40, y: 200, width: cardWidth, height: 120, rotation: 0, title: 'accountabl', desc: 'easy peer-powered budgeting' },
+  { id: 3, x: 20, y: 320, width: cardWidth, height: 120, rotation: 0, title: 'planmi', desc: 'plan and execute language lessons' },
+  { id: 4, x: 30, y: 400, width: cardWidth, height: 120, rotation: 0, title: 'Blog', desc: '' },
+  { id: 5, x: 20, y: 480, width: cardWidth, height: 280, rotation: 0, title: 'Socials', desc: 'connect with me' },
+  { id: 6, x: 40, y: 600, width: cardWidth, height: 120, rotation: 0, title: 'About me', desc: '' },
 ];
+};
 
-// Desktop card positions (original)
-const generateDesktopCards = () => [
-  { id: 1, x: 50, y: 150, width: 350, height: 200, rotation: 0, title: 'grifgraf', desc: 'AR street art platform' },
-  { id: 2, x: 200, y: 330, width: 400, height: 200, rotation: 0, title: 'accountabl', desc: 'easy peer-powered budgeting' },
-  { id: 3, x: 100, y: 510, width: 300, height: 200, rotation: 0, title: 'planmi', desc: 'plan and execute language lessons' },
-  { id: 4, x: 800, y: 200, width: 300, height: 200, rotation: 0, title: 'Blog', desc: '' },
-  { id: 5, x: 1200, y: 150, width: 400, height: 600, rotation: 0, title: 'Socials', desc: 'connect with me' },
-  { id: 6, x: 900, y: 700, width: 400, height: 200, rotation: 0, title: 'About me', desc: '' },
-];
+// Desktop card positions (responsive)
+const generateDesktopCards = (windowWidth: number = 1600, windowHeight: number = 900) => {
+  const definitions = [
+    { id: 1, relX: 0.05, relY: 0.15, width: 350, height: 200, rotation: 0, title: 'grifgraf', desc: 'AR street art platform' },
+    { id: 2, relX: 0.15, relY: 0.35, width: 400, height: 200, rotation: 0, title: 'accountabl', desc: 'easy peer-powered budgeting' },
+    { id: 3, relX: 0.08, relY: 0.55, width: 300, height: 200, rotation: 0, title: 'planmi', desc: 'plan and execute language lessons' },
+    { id: 4, relX: 0.55, relY: 0.20, width: 300, height: 200, rotation: 0, title: 'Blog', desc: '' },
+    { id: 5, relX: 0.75, relY: 0.15, width: 400, height: 600, rotation: 0, title: 'Socials', desc: 'connect with me' },
+    { id: 6, relX: 0.60, relY: 0.75, width: 400, height: 200, rotation: 0, title: 'About me', desc: '' },
+  ];
+
+  return definitions.map(def => {
+    let x = windowWidth * def.relX;
+    let y = windowHeight * def.relY;
+
+    // Clamp to ensure card stays within window bounds with padding
+    const padding = 20;
+    x = Math.max(padding, Math.min(x, windowWidth - def.width - padding));
+    y = Math.max(padding, Math.min(y, windowHeight - def.height - padding));
+
+    return {
+      id: def.id,
+      x,
+      y,
+      width: def.width,
+      height: def.height,
+      rotation: def.rotation,
+      title: def.title,
+      desc: def.desc
+    };
+  });
+};
 
 export default function Home() {
   const [hoveredColor, setHoveredColor] = useState(defaultWatermarkColor);
@@ -115,6 +142,31 @@ export default function Home() {
 
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
   
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const [blogUrl, setBlogUrl] = useState('/blog');
+
+  const closeModal = () => {
+    setActiveCard(null);
+    const params = new URLSearchParams(searchParams?.toString());
+    if (params.has('blog')) {
+       router.push('/', { scroll: false });
+    }
+    setBlogUrl('/blog');
+  };
+
+  useEffect(() => {
+    const blogParam = searchParams?.get('blog');
+    if (blogParam) {
+      setBlogUrl(blogParam);
+      // Find blog card (id: 4)
+      const blogCard = cards.find(c => c.id === 4) || generateDesktopCards().find(c => c.id === 4);
+      if (blogCard) {
+        setActiveCard(blogCard);
+      }
+    }
+  }, [searchParams, cards]);
+  
   useEffect(() => {
     const handleResize = () => {
       const newWidth = window.innerWidth;
@@ -125,13 +177,27 @@ export default function Home() {
       setIsMobile(mobile);
       
       // Regenerate cards based on screen size
-      setCards(mobile ? generateMobileCards() : generateDesktopCards());
+      setCards(mobile ? generateMobileCards(newWidth) : generateDesktopCards(newWidth, newHeight));
       
-      // Regenerate shapes with mobile scaling
-      setShapes(generateShapes(10, mobile));
+      // Update shapes if not initialized or adjust positions if they are
+      setShapes((prevShapes: any[]) => {
+        if (prevShapes.length === 0) {
+          return generateShapes(10, mobile);
+        }
+        // Adjust existing shapes to stay within new bounds if necessary
+        return prevShapes.map(shape => {
+             // Keep existing position/velocity but clamp to new bounds if needed
+             const clampedX = Math.min(shape.x, newWidth);
+             const clampedY = Math.min(shape.y, newHeight);
+             return { ...shape, x: clampedX, y: clampedY };
+        });
+      });
     };
     
     handleResize(); // Get initial size
+    // Generate initial shapes only once
+    setShapes(generateShapes(10, window.innerWidth < 768));
+    
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -395,7 +461,7 @@ export default function Home() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      onClick={() => setActiveCard(null)} // Closes modal if outer area is clicked
+      onClick={() => closeModal()} // Closes modal if outer area is clicked
     >
       <motion.div
         className={`bg-white p-6 rounded-lg ${isMobile ? 'max-w-sm w-full mx-4' : 'max-w-3xl w-full'} relative`}
@@ -406,14 +472,14 @@ export default function Home() {
       >
         <button
           className="absolute top-2 right-2 text-2xl font-bold"
-          onClick={() => setActiveCard(null)}
+          onClick={() => closeModal()}
         >
           &times;
         </button>
         <div className="mt-4">
           <h2 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold`}>{activeCard.title}</h2>
           <div className="mt-4">
-            {frame(activeCard.id, isMobile)}
+            {frame(activeCard.id, isMobile, blogUrl)}
           </div>
         </div>
       </motion.div>
@@ -424,7 +490,7 @@ export default function Home() {
   );
 }
 
-const frame = (id: number, isMobile: boolean = false) => {
+const frame = (id: number, isMobile: boolean = false, blogUrl: string = '/blog') => {
   const imageSize = isMobile ? 'w-24 h-24' : 'w-36 h-36';
   const gridCols = isMobile ? 'grid-cols-2' : 'grid-cols-2';
   
@@ -432,17 +498,17 @@ const frame = (id: number, isMobile: boolean = false) => {
     case 1:
       return                 <>
       <div className={`grid ${gridCols} gap-4`}>
-        <div className="rounded-lg overflow-hidden w-48 h-48 m-auto">
-          <img src="grifgraf-full.png" alt="Grifgraf" className={`${imageSize} object-cover m-auto`} />
+        <div className="rounded-lg overflow-hidden w-full aspect-square max-w-[12rem] m-auto bg-gray-100">
+          <img src="grifgraf-full.png" alt="Grifgraf" className={`w-full h-full object-cover m-auto`} />
         </div>
-        <div className="rounded-lg overflow-hidden w-48 h-48 m-auto">
-          <img src="arcore-camera-geolocating/monkey.png" alt="Monkey" className={`${imageSize} object-cover m-auto`} />
+        <div className="rounded-lg overflow-hidden w-full aspect-square max-w-[12rem] m-auto bg-gray-100">
+          <img src="arcore-camera-geolocating/monkey.png" alt="Monkey" className={`w-full h-full object-cover m-auto`} />
         </div>
-        <div className="rounded-lg overflow-hidden w-48 h-48 m-auto">
-          <img src="arkit-vincenty-geolocating/interface.PNG" alt="Interface" className={`${imageSize} object-cover m-auto`} />
+        <div className="rounded-lg overflow-hidden w-full aspect-square max-w-[12rem] m-auto bg-gray-100">
+          <img src="arkit-vincenty-geolocating/interface.PNG" alt="Interface" className={`w-full h-full object-cover m-auto`} />
         </div>
-        <div className="rounded-lg overflow-hidden w-48 h-48 m-auto">
-          <img src="arkit-vincenty-geolocating/savedimage.PNG" alt="Saved Image" className={`${imageSize} object-cover m-auto`} />
+        <div className="rounded-lg overflow-hidden w-full aspect-square max-w-[12rem] m-auto bg-gray-100">
+          <img src="arkit-vincenty-geolocating/savedimage.PNG" alt="Saved Image" className={`w-full h-full object-cover m-auto`} />
         </div>
       </div>
       <div className="mt-4">
@@ -454,8 +520,8 @@ const frame = (id: number, isMobile: boolean = false) => {
     </>
     case 2:
       return <>
-        <div className="rounded-lg overflow-hidden w-48 h-48 m-auto">
-          <img src="accountabl.png" alt="accountabl" className={`${imageSize} object-cover m-auto`} />
+        <div className="rounded-lg overflow-hidden w-full aspect-square max-w-[12rem] m-auto bg-gray-100">
+          <img src="accountabl.png" alt="accountabl" className={`w-full h-full object-cover m-auto`} />
         </div>
       <div className="mt-4">
         <p className="normal-case">accountabl is a peer budgeting app, where you and a friend can share your transactions and check in on each others progress in meeting your financial goals.</p>
@@ -464,8 +530,8 @@ const frame = (id: number, isMobile: boolean = false) => {
     </>
     case 3:
       return <>
-        <div className="rounded-lg overflow-hidden w-48 h-48 m-auto">
-          <img src="planmi.png" alt="accountabl" className={`${imageSize} object-cover m-auto`} />
+        <div className="rounded-lg overflow-hidden w-full aspect-square max-w-[12rem] m-auto bg-gray-100">
+          <img src="planmi.png" alt="accountabl" className={`w-full h-full object-cover m-auto`} />
         </div>
       <div className="mt-4">
         <p className="normal-case">I put this tool together to automate lesson planning back when I was an english teacher.</p>
@@ -476,16 +542,16 @@ const frame = (id: number, isMobile: boolean = false) => {
     </>
     case 4:
       return <iframe
-        src="/blog"
-        className={`w-full ${isMobile ? 'h-[300px]' : 'h-[500px]'} rounded bg-white`}
+        src={blogUrl}
+        className={`w-full ${isMobile ? 'h-[300px]' : 'h-[500px]'} rounded bg-white border-0`}
       />
       case 6:
         return <>
-          <div className="rounded-lg overflow-hidden w-48 h-48 m-auto">
-            <img src="portrait.png" alt="sam" className={`${isMobile ? 'w-32 h-32' : 'w-48 h-48'} object-cover m-auto`} />
+          <div className="rounded-lg overflow-hidden w-full aspect-square max-w-[12rem] m-auto bg-gray-100">
+            <img src="portrait.png" alt="sam" className={`w-full h-full object-cover m-auto`} />
           </div>
         <div className="mt-4">
-          <p className="normal-case">I am a highly experienced software engineer experience currently based out of Southeast Asia. I&apos;m originally from Chicago. I like cooking, music, meditation, and architecture.</p>
+          <p className="normal-case">I&apos;m Sam, from Chicago living in Asia (currently Ho Chi Minh City). I code and make beats.</p>
           
         </div>
       </>
