@@ -551,8 +551,7 @@ const frame = (id: number, isMobile: boolean = false, blogUrl: string = '/blog')
             <img src="portrait.png" alt="sam" className={`w-full h-full object-cover m-auto`} />
           </div>
         <div className="mt-4">
-          <p className="normal-case">I&apos;m Sam, from Chicago living in Asia (currently Ho Chi Minh City). I code and make beats.</p>
-          
+          <p className="normal-case">Senior software engineer specializing in AI-enabled web platforms, distributed systems, and high-performance browser and mobile applications. Experienced building scalable full-stack software solutions for multiple startup and enterprise teams.</p>
         </div>
       </>
   }
