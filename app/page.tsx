@@ -130,7 +130,7 @@ const generateDesktopCards = (windowWidth: number = 1600, windowHeight: number =
   });
 };
 
-export default function Home() {
+function HomeContent() {
   const [hoveredColor, setHoveredColor] = useState(defaultWatermarkColor);
   // New state for the white container background:
   const [bgColor, setBgColor] = useState("#ffffff");
@@ -145,6 +145,7 @@ export default function Home() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [blogUrl, setBlogUrl] = useState('/blog');
+  const stopCardDrag = (e: React.SyntheticEvent) => e.stopPropagation();
 
   const closeModal = () => {
     setActiveCard(null);
@@ -235,7 +236,6 @@ export default function Home() {
   }, [isMobile]);
 
   return (
-    <Suspense fallback={<div>Loading...</div>}>
     <div
       className="relative min-h-screen p-6 overflow-hidden text-black uppercase tracking-wide font-michroma"
       style={{ backgroundColor: bgColor }} // container background set to bgColor
@@ -361,34 +361,46 @@ export default function Home() {
 
       <div className={`grid ${isMobile ? 'grid-cols-3' : 'grid-cols-2'} gap-4 overflow-hidden`}>
           <a href='https://www.github.com/ageofadz'
+          onPointerDown={stopCardDrag}
+          onClick={stopCardDrag}
           className="transition-all  hover:bg-neutral-200 border border-neutral-200  bg-neutral-50 rounded p-1 text-sm inline-flex items-left  text-neutral-900 dark:text-neutral-100 mb-3"
           >
           <img className='m-auto' width={isMobile ? 60 : 120} height={isMobile ? 60 : 120} alt="GitHub logo" src="/github-logo.svg"/>
           </a>
           <a href='https://www.linkedin.com/in/sam-r-559bb090/'
+          onPointerDown={stopCardDrag}
+          onClick={stopCardDrag}
           className="transition-all  hover:bg-neutral-200 border border-neutral-200 bg-neutral-50 rounded p-1 text-sm inline-flex items-left  text-neutral-900 dark:text-neutral-100 mb-3 "
           >
           <img  className='m-auto' width={isMobile ? 60 : 120} height={isMobile ? 60 : 120} alt="LinkedIn logo" src="/linkedin-logo.svg" />
           </a>
-          <a  href='mailto:samuel.lazier.robertson+website@gmail.com'
+          <a  href='https://x.com/samrobertsondev'
+          onPointerDown={stopCardDrag}
+          onClick={stopCardDrag}
           className="transition-all  hover:bg-neutral-200 border border-neutral-200 bg-neutral-50 rounded p-1 text-sm inline-flex items-left  text-neutral-900 dark:text-neutral-100 mb-3 "
           >
-          <img  className='m-auto' width={isMobile ? 60 : 120} height={isMobile ? 60 : 120} alt="Email" src="/email.svg"/>
+          <img  className='m-auto' width={isMobile ? 60 : 120} height={isMobile ? 60 : 120} alt="X" src="/twitter.webp"/>
           
           </a>
           <a  href='https://www.instagram.com/sam.l.robertson/'
+          onPointerDown={stopCardDrag}
+          onClick={stopCardDrag}
           className="transition-all  hover:bg-neutral-200 border border-neutral-200 bg-neutral-50 rounded p-1 text-sm inline-flex items-left  text-neutral-900 dark:text-neutral-100 mb-3 "
           >
           <img  className='m-auto' width={isMobile ? 60 : 120} height={isMobile ? 60 : 120} alt="Instagram" src="/insta-logo.svg"/>
           
           </a>
           <a  href='https://www.soundcloud.com/colortelevisionmusic/'
+          onPointerDown={stopCardDrag}
+          onClick={stopCardDrag}
           className="transition-all  hover:bg-neutral-200 border border-neutral-200 bg-neutral-50 rounded p-1 text-sm inline-flex items-left  text-neutral-900 dark:text-neutral-100 mb-3 "
           >
           <img  className='m-auto' width={isMobile ? 60 : 120} height={isMobile ? 60 : 120} alt="Soundcloud" src="/soundcloud.svg"/>
           
           </a>
           <a  href='https://huggingface.co/samrobertsondev'
+          onPointerDown={stopCardDrag}
+          onClick={stopCardDrag}
           className="transition-all  hover:bg-neutral-200 border border-neutral-200 bg-neutral-50 rounded p-1 text-sm inline-flex items-left  text-neutral-900 dark:text-neutral-100 mb-3 "
           >
           <img  className='m-auto' width={isMobile ? 60 : 120} height={isMobile ? 60 : 120} alt="Huggingface" src="/huggingface.svg"/>
@@ -488,7 +500,108 @@ export default function Home() {
   )}
 </AnimatePresence>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <HomeContent />
     </Suspense>
+  );
+}
+
+function ContactFormCard({ isMobile }: { isMobile: boolean }) {
+  const [showForm, setShowForm] = useState(false);
+  const [name, setName] = useState('');
+  const [message, setMessage] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const [sendStatus, setSendStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSending(true);
+    setSendStatus('idle');
+
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, message }),
+      });
+
+      if (!res.ok) throw new Error('Failed to send');
+      setSendStatus('success');
+      setName('');
+      setMessage('');
+    } catch {
+      setSendStatus('error');
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  return (
+    <div className="mt-4">
+      <div className="relative min-h-[14rem]">
+        <AnimatePresence mode="wait">
+          {!showForm ? (
+            <motion.div
+              key="contact-image"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="rounded-lg overflow-hidden w-full aspect-square max-w-[12rem] m-auto bg-gray-100"
+            >
+              <img src="portrait.png" alt="sam" className="w-full h-full object-cover m-auto" />
+            </motion.div>
+          ) : (
+            <motion.form
+              key="contact-form"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onSubmit={onSubmit}
+              className="normal-case space-y-3 max-w-md mx-auto"
+            >
+              <div>
+                <label htmlFor="contact-name" className="block text-sm font-semibold text-black">Name</label>
+                <input
+                  id="contact-name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  className="w-full rounded border border-neutral-300 px-3 py-2 text-black bg-slate-200"
+                />
+              </div>
+              <div>
+                <label htmlFor="contact-message" className="block text-sm font-semibold text-black">Message</label>
+                <textarea
+                  id="contact-message"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  required
+                  rows={isMobile ? 4 : 5}
+                  className="w-full rounded border border-neutral-300 px-3 py-2 text-black bg-slate-200"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={isSending}
+                className="rounded bg-black px-4 py-2 text-white transition-colors hover:bg-neutral-800"
+              >
+                {isSending ? 'Sending...' : 'Send'}
+              </button>
+              {sendStatus === 'success' && <p className="text-sm text-green-700">Sent.</p>}
+              {sendStatus === 'error' && <p className="text-sm text-red-700">Could not send. Try again.</p>}
+            </motion.form>
+          )}
+        </AnimatePresence>
+      </div>
+    <div className="mt-4">
+        <p className="normal-case">Freelance web dev. See my <a href="resume.pdf" className="text-blue-500 underline">resume</a>, or <a onClick={() => setShowForm(!showForm)} className="text-blue-500 underline">let me know</a> what you&apos;re building and how I can help.</p>
+      </div>
+    </div>
   );
 }
 
@@ -548,13 +661,6 @@ const frame = (id: number, isMobile: boolean = false, blogUrl: string = '/blog')
         className={`w-full ${isMobile ? 'h-[300px]' : 'h-[500px]'} rounded bg-white border-0`}
       />
       case 6:
-        return <>
-          <div className="rounded-lg overflow-hidden w-full aspect-square max-w-[12rem] m-auto bg-gray-100">
-            <img src="portrait.png" alt="sam" className={`w-full h-full object-cover m-auto`} />
-          </div>
-        <div className="mt-4">
-          <p className="normal-case">Freelance web dev. See my <a href="resume.pdf" className="text-blue-500 underline">resume</a>, or <a href="mailto:samuel.lazier.robertson+website@gmail.com" className="text-blue-500 underline">let me know</a> what you&apos;re building and how I can help.</p>
-        </div>
-      </>
+        return <ContactFormCard isMobile={isMobile} />
   }
 }
