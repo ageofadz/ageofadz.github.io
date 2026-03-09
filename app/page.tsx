@@ -553,7 +553,7 @@ const frame = (id: number, isMobile: boolean = false, blogUrl: string = '/blog')
             <img src="portrait.png" alt="sam" className={`w-full h-full object-cover m-auto`} />
           </div>
         <div className="mt-4">
-          <p className="normal-case">Freelance web dev. See my <a href="resume.pdf" className="text-blue-500 underline">resume</a>, or <a href="mailto:samuel.lazier.robertson+website@gmail.com" className="text-blue-500 underline">let me know</a> what you\'re building and how I can help.</p>
+          <p className="normal-case">Freelance web dev. See my <a href="resume.pdf" className="text-blue-500 underline">resume</a>, or <a href="mailto:samuel.lazier.robertson+website@gmail.com" className="text-blue-500 underline">let me know</a> what you&apos;re building and how I can help.</p>
         </div>
       </>
   }
