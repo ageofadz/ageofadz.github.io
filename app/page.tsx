@@ -235,6 +235,7 @@ export default function Home() {
   }, [isMobile]);
 
   return (
+    <Suspense fallback={<div>Loading...</div>}>
     <div
       className="relative min-h-screen p-6 overflow-hidden text-black uppercase tracking-wide font-michroma"
       style={{ backgroundColor: bgColor }} // container background set to bgColor
@@ -487,6 +488,7 @@ export default function Home() {
   )}
 </AnimatePresence>
     </div>
+    </Suspense>
   );
 }
 
@@ -551,7 +553,7 @@ const frame = (id: number, isMobile: boolean = false, blogUrl: string = '/blog')
             <img src="portrait.png" alt="sam" className={`w-full h-full object-cover m-auto`} />
           </div>
         <div className="mt-4">
-          <p className="normal-case">Senior software engineer specializing in AI-enabled web platforms, distributed systems, and high-performance browser and mobile applications. Experienced building scalable full-stack software solutions for multiple startup and enterprise teams.</p>
+          <p className="normal-case">Freelance web dev. See my <a href="resume.pdf" className="text-blue-500 underline">resume</a>, or <a href="mailto:samuel.lazier.robertson+website@gmail.com" className="text-blue-500 underline">let me know</a> what you\'re building and how I can help.</p>
         </div>
       </>
   }
